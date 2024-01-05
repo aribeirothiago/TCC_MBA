@@ -12,6 +12,7 @@ import glob
 import os
 
 from selenium import webdriver
+from selenium.webdriver.common.by import By
 from time import sleep
 from pygooglenews import GoogleNews
 from leia import SentimentIntensityAnalyzer
@@ -32,7 +33,7 @@ end = date.today()-datetime.timedelta(days=0)
 start = end-datetime.timedelta(days=1)
 
 #True ou False para se o arquivo da carteira já foi baixado anteriomente
-download = False
+download = True
 
 #%% Busca da carteira que compõe o índice desejado no dia
 def busca_carteira_teorica(indice, espera=8):
@@ -46,9 +47,9 @@ def busca_carteira_teorica(indice, espera=8):
     url = f'https://sistemaswebb3-listados.b3.com.br/indexPage/day/{indice.upper()}?language=pt-br'  
     wd.get(url)
     sleep(espera)
-    wd.find_element_by_id('segment').send_keys("Setor de Atuação")
+    wd.find_element('id','segment').send_keys("Setor de Atuação")
     sleep(espera)
-    wd.find_element_by_link_text("Download").click()
+    wd.find_element(By.LINK_TEXT,"Download").click()
     sleep(espera)
 
     return 
