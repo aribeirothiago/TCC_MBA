@@ -33,7 +33,7 @@ end = date.today()-datetime.timedelta(days=0)
 start = end-datetime.timedelta(days=1)
 
 #True ou False para se o arquivo da carteira já foi baixado anteriomente
-download = True
+download = False
 
 #%% Busca da carteira que compõe o índice desejado no dia
 def busca_carteira_teorica(indice, espera=8):
@@ -67,20 +67,25 @@ carteira = pd.read_csv(latest_file, sep=';', encoding='ISO-8859-1',skipfooter=2,
 tickers = carteira['Código']
 
 #%% Buscar notícias
+            
+# Inicialização e configuração
+gn = GoogleNews(lang='pt', country='BR')
 
-#Inicialização e configuração
-gn = GoogleNews(lang = 'pt', country = 'BR')
+# Criação do dataframe
+df_list = []
 
-#Criação do dataframe
-df = pd.DataFrame(columns=['Code','Title','Score_LeIA','LeIA'])
+# Loop para buscar notícias que contêm os tickers desejados nas datas desejadas
+for ticker in tickers:
+    # Eliminar resultados com "varzea" para evitar links indesejados
+    search = gn.search(f'"{ticker}" -varzea', from_=start.strftime('%Y-%m-%d'), to_=end.strftime('%Y-%m-%d'))
+    
+    # Create a DataFrame for the current ticker and append it to df_list
+    ticker_data = [[ticker, item.title, None, None] for item in search['entries'] if ticker in item.title]
+    df_ticker = pd.DataFrame(ticker_data, columns=["Code", "Title", "Score_LeIA", "LeIA"])
+    df_list.append(df_ticker)
 
-#Loop para buscar notícias que contem os tickers desejados nas datas desejadas
-for i in range(0,len(tickers)):
-    #Eliminar resultados com varzea pois retorna muitos links da prefeitura de Várzea Alegre sem utilidade
-    search = gn.search(f'"{tickers[i]}" -varzea', from_=start.strftime('%Y-%m-%d'), to_=end.strftime('%Y-%m-%d'))
-    for item in search['entries']:
-        if tickers[i] in item.title:
-            df = df.append(pd.Series([tickers[i], item.title], index = ["Code","Title",]), ignore_index=True)
+# Concatenate the list of DataFrames into a single DataFrame
+df = pd.concat(df_list, ignore_index=True)
             
 #%% Sentiment Analysis - LeIA (https://github.com/rafjaa/LeIA)
 
