@@ -3,10 +3,10 @@ import pandas as pd
 import yfinance as yf
 import seaborn as sns
 import matplotlib.pylab as plt
+import numpy as np
 
 import re
 import spacy
-import datetime
 import pathlib
 import glob
 import os
@@ -16,21 +16,24 @@ from selenium.webdriver.common.by import By
 from time import sleep
 from pygooglenews import GoogleNews
 from leia import SentimentIntensityAnalyzer
-from datetime import date
+from datetime import date, time, datetime, timedelta
 from unidecode import unidecode
-from sklearn.metrics import f1_score, precision_score, recall_score, confusion_matrix
+from sklearn.metrics import classification_report, confusion_matrix
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.ensemble import RandomForestClassifier
 
 
 #%%Presets
 
+delta = 0
+
 #Dados das ações
-today = (date.today()-datetime.timedelta(days=0)).strftime('%Y-%m-%d')
+today = (date.today()-timedelta(days=delta)).strftime('%Y-%m-%d')
 
 #Notícias
-end = date.today()-datetime.timedelta(days=0)
-start = end-datetime.timedelta(days=1)
+end =  date.today()-timedelta(days=delta)
+endtime = datetime.combine(date.today()-timedelta(days=delta),time(10, 0))
+start = end-timedelta(days=1)
 
 #True ou False para se o arquivo da carteira já foi baixado anteriomente
 download = False
@@ -77,15 +80,17 @@ df_list = []
 # Loop para buscar notícias que contêm os tickers desejados nas datas desejadas
 for ticker in tickers:
     # Eliminar resultados com "varzea" para evitar links indesejados
-    search = gn.search(f'"{ticker}" -varzea', from_=start.strftime('%Y-%m-%d'), to_=end.strftime('%Y-%m-%d'))
+    search = gn.search(f'"{ticker}" -varzea', from_=start.strftime('%Y-%m-%d'), to_=(end+timedelta(days=1)).strftime('%Y-%m-%d'))
     
     # Create a DataFrame for the current ticker and append it to df_list
-    ticker_data = [[ticker, item.title, None, None] for item in search['entries'] if ticker in item.title]
-    df_ticker = pd.DataFrame(ticker_data, columns=["Code", "Title", "Score_LeIA", "LeIA"])
+    ticker_data = [[ticker, item.title, item.published, None, None] for item in search['entries'] if ticker in item.title]
+    df_ticker = pd.DataFrame(ticker_data, columns=["Code", "Title", "Datetime","Score_LeIA", "LeIA"])
     df_list.append(df_ticker)
 
 # Concatenate the list of DataFrames into a single DataFrame
 df = pd.concat(df_list, ignore_index=True)
+
+df = df[pd.to_datetime(df['Datetime'])<=endtime]
             
 #%% Sentiment Analysis - LeIA (https://github.com/rafjaa/LeIA)
 
@@ -168,20 +173,14 @@ def train_and_evaluate_model(X_train, y_train, X_test, y_test):
     model_rf.fit(X_train, y_train)
     y_pred = model_rf.predict(X_test)
     
-    f1 = f1_score(y_test, y_pred, average='weighted')
-    precision = precision_score(y_test, y_pred, average='weighted')
-    recall = recall_score(y_test, y_pred, average='weighted')
-    
-    return model_rf, f1, precision, recall, y_pred
+    metrics = classification_report(y_test, y_pred, output_dict=True)
+    return model_rf, metrics, y_pred
 
 #Treinamento e teste do modelo
-model_rf_spc, f1_rf_spc, precision_rf_spc, recall_rf_spc, y_pred_rf_spc = train_and_evaluate_model(X_train_pt_spc, y_train_pt_spc, X_test_pt_spc, y_test_pt_spc)
+model_rf_spc, metrics_spc, y_pred_rf_spc = train_and_evaluate_model(X_train_pt_spc, y_train_pt_spc, X_test_pt_spc, y_test_pt_spc)
 
-#Display dos resultados
-data = {'F1 Score': [f1_rf_spc],
-        'Precisão': [precision_rf_spc],
-        'Recall': [recall_rf_spc]}
-df_resultados = pd.DataFrame(data)
+df_resultados = pd.DataFrame(metrics_spc)
+df_resultados = df_resultados.transpose()
 
 
 #Definir os nomes das classes
@@ -222,7 +221,13 @@ X_pred= df_pt_spc_pred['Title']
 X_tfidf_pt_spc_pred = vectorizer.transform(X_pred)
 
 #Previsão do modelo
-df['ML'] = model_rf_spc.predict(X_tfidf_pt_spc_pred)
+df['ML_proba_neg'] = model_rf_spc.predict_proba(X_tfidf_pt_spc_pred)[:,0]
+df['ML_proba_neu'] = model_rf_spc.predict_proba(X_tfidf_pt_spc_pred)[:,1]
+df['ML_proba_pos'] = model_rf_spc.predict_proba(X_tfidf_pt_spc_pred)[:,2]
+
+#Calcular a classe prevista com base nas probabilidades
+df['ML_predicted_class'] = np.argmax(df[['ML_proba_neg', 'ML_proba_neu', 'ML_proba_pos']].values, axis=1)
+
 
 
 #%% Recomendações: verificar ações que tendem a subir ou cair
@@ -230,28 +235,37 @@ df['ML'] = model_rf_spc.predict(X_tfidf_pt_spc_pred)
 #Fazer uma média dos scores de todas as notícias com determinado ticker para LeIA
 rec1 = df[['Code','Score_LeIA']].groupby(['Code']).mean()
 
-#Remover sentimentos neutros para ML
-rec2 = df[df['ML'] != 'neutral'].groupby('Code')['ML'].apply(lambda x: x.mode().iloc[0])
+#Fazer uma média dos scores de todas as notícias com determinado ticker para ML
+rec2 = df[['Code','ML_proba_neg','ML_proba_neu','ML_proba_pos','ML_predicted_class']].groupby('Code').mean()
 
 #Juntar os dataframes
-rec = pd.merge(rec1, rec2, on='Code', how='left')
+rec = pd.merge(rec1, rec2, on='Code', how='outer')
 
-#Criar coluna para recomendação LeIA
+
 rec['Rec_LeIA'] = ' '
-
-
-#Loop para recomendações LeIA com base no threshold de +-0.05
+#Loop para recomendações LeIA com base em threshold (normalmente 0.05)
 for i in range(0,len(rec)):
 
-    if rec['Score_LeIA'].iloc[i] >= 0.05:
+    if rec['Score_LeIA'].iloc[i] >= 0.3:
         rec['Rec_LeIA'].iloc[i]  = 'positive'
-    elif rec['Score_LeIA'].iloc[i]  <= -0.05:
+    elif rec['Score_LeIA'].iloc[i]  <= -0.5:
         rec['Rec_LeIA'].iloc[i]  = 'negative'
     else:
         rec['Rec_LeIA'].iloc[i]  = 'neutral'
-
-#Remover sentimentos neutros para LeIA
-rec['Rec_LeIA'] = rec[rec['Rec_LeIA'] != 'neutral']['Rec_LeIA']
+        
+rec['ML']=''
+#Escolher threshold:
+for i in range(0,len(rec)):
+    
+    if rec['ML_proba_neu'].iloc[i] < rec['ML_proba_neg'].iloc[i] or rec['ML_proba_neu'].iloc[i] <rec['ML_proba_pos'].iloc[i]:       
+        if rec['ML_proba_neg'].iloc[i] > 0.343 and rec['ML_proba_neg'].iloc[i] > rec['ML_proba_pos'].iloc[i]:
+            rec['ML'].iloc[i] = 'negative'
+        elif rec['ML_proba_pos'].iloc[i] > 0.337:
+            rec['ML'].iloc[i] = 'positive'
+        else:
+            rec['ML'].iloc[i] = 'neutral'
+    else:
+        rec['ML'].iloc[i] = 'neutral'
 
 #Resetar o índice do dataframe
 rec = rec.reset_index()
@@ -259,55 +273,69 @@ rec = rec.reset_index()
 #%% Obter variação da ação no dia
 
 #Criar coluna para variações
-rec['Var'] = ' '
-rec['Var_sent'] = ' '
+rec['fechou'] = ' '
+rec['pfechar'] = ' '
+rec['previsao_ml'] = ' '
+rec['previsao_LeIA'] = ' '
+rec['open'] = ' '
+rec['close_previous'] = ' '
 
 #Loop para os tickers desejados
 for i in range(0,len(rec)):
     ticker_symbol = rec['Code'].iloc[i]+'.SA'
     
+    # Obter dados intradiários (1 minuto) para o dia atual
+    data_hoje = yf.download(ticker_symbol, start=end,end=end+timedelta(days=1), interval='1m')
+    data_ontem = yf.download(ticker_symbol, start=start, end=end)
     
-    try:
-        #Tentar obter os dados históricos
-        data = yf.Ticker(ticker_symbol).history(period='1d')
+    # Extrair preços de abertura e fechamento
+    opening_prices = round(data_hoje['Open'],2)
+    closing_price = round(data_ontem['Close'][0],2)
     
-        if not data.empty:
-            #Usar o último preço de fechamento disponível ou o preço atual, se disponível
-            close_price = data['Close'].iloc[-1] if not pd.isna(data['Close'].iloc[-1]) else data['Open'].iloc[-1]
+    rec['open'].iloc[i] = opening_prices[0]
+    rec['close_previous'].iloc[i] = closing_price
     
-            #Calcular a variação percentual
-            variation_percent = ((close_price - data['Open'].iloc[0]) / data['Open'].iloc[0]) * 100
-            rec.loc[i, 'Var'] = variation_percent
-            
-            #Determinar se a variação foi positiva ou negativa
-            if variation_percent >= 0:
-                rec.loc[i, 'Var_sent']  = 'positive'
-            else:
-                rec.loc[i, 'Var_sent']  = 'negative'
-           
-        else:
-            print(f'Não há dados disponíveis para {ticker_symbol} no dia {today}.')
-    except Exception as e:
-        print(f'Falha ao obter dados para {ticker_symbol}. Motivo: {str(e)}')
-
-
+    # Verificar se o "gap" foi fechado em algum momento
+    gap_closed_at_some_point = closing_price in opening_prices.values
+    
+    # Exibir o resultado
+    if gap_closed_at_some_point:
+        rec['fechou'].iloc[i] = 'Y'
+    else:
+        rec['fechou'].iloc[i] = 'N'
+        
+    if opening_prices.iloc[0] > closing_price:
+        rec['pfechar'].iloc[i] = 'negative'
+    else:
+        rec['pfechar'].iloc[i] = 'positive'
+        
+    
+    if rec['ML'].iloc[i] not in ('positive','negative'):
+        pass
+    elif rec['pfechar'].iloc[i] == rec['ML'].iloc[i]:
+        rec['previsao_ml'].iloc[i] = 'Y'
+    else:
+        rec['previsao_ml'].iloc[i] = 'N'
+        
+    if rec['Rec_LeIA'].iloc[i] not in ('positive','negative'):
+        pass
+    elif rec['pfechar'].iloc[i] == rec['Rec_LeIA'].iloc[i]:
+        rec['previsao_LeIA'].iloc[i] = 'Y'
+    else:
+        rec['previsao_LeIA'].iloc[i] = 'N'
+    
 
 #%% Correlação e matrizes de confusão
-
 #Criação dos dataframes de recomendação separados
-rec_leia = rec[rec['Rec_LeIA'].notna()][['Code','Rec_LeIA','Var_sent']]
-rec_ml = rec[rec['ML'].notna()][['Code','ML','Var_sent']]
-
-#Matriz de correlação para scores LeIA e porcentagem de variação
-correlation_matrix = rec['Score_LeIA'].astype(float).corr(rec['Var'].astype(float))
-
+rec_leia = rec[rec['Rec_LeIA'] != 'neutral'][['Code','previsao_LeIA','fechou']]
+rec_ml = rec[rec['ML'] != 'neutral'][['Code','previsao_ml','fechou']]
 
 #Definir os nomes das classes
 nomes_classes_rec = ['negative', 'positive']
 
 #Criar as matrizez de confusão
-conf_mat_leia = confusion_matrix(rec_leia['Var_sent'], rec_leia['Rec_LeIA'])
-conf_mat_ml = confusion_matrix(rec_ml['Var_sent'], rec_ml['ML'])
+conf_mat_leia = confusion_matrix(rec_leia['fechou'], rec_leia['previsao_LeIA'])
+conf_mat_ml = confusion_matrix(rec_ml['fechou'], rec_ml['previsao_ml'])
 
 #Criar dataframe para a matriz de confusão com os nomes das classes
 conf_df_leia = pd.DataFrame(conf_mat_leia, index=nomes_classes_rec, columns=nomes_classes_rec)
@@ -336,31 +364,31 @@ plt.show()
 #Cálculo dos indicadores 
 #Os dados POS são uma suposição para se considerassemos que todas as variações como positivas (base de comparação_)
 #LeIA e ML têm quantidades diferentes devido à exclusão de neutros
-f1_leia = f1_score(rec_leia['Var_sent'], rec_leia['Rec_LeIA'], average='weighted')
-precision_leia = precision_score(rec_leia['Var_sent'], rec_leia['Rec_LeIA'], average='weighted')
-recall_leia = recall_score(rec_leia['Var_sent'], rec_leia['Rec_LeIA'], average='weighted')
+metrics_leia_dict = classification_report(rec_leia['fechou'], rec_leia['previsao_LeIA'], output_dict=True)
+metrics_leia = pd.DataFrame(metrics_leia_dict)
+metrics_leia = metrics_leia.transpose()
 
 rec_leia_pos = rec_leia.copy()
-rec_leia_pos['Rec_LeIA'] = 'positive'
+rec_leia_pos['previsao_LeIA'] = 'Y'
 
-f1_leia_pos = f1_score(rec_leia_pos['Var_sent'], rec_leia_pos['Rec_LeIA'], average='weighted')
-precision_leia_pos = precision_score(rec_leia_pos['Var_sent'], rec_leia_pos['Rec_LeIA'], average='weighted')
-recall_leia_pos = recall_score(rec_leia_pos['Var_sent'], rec_leia_pos['Rec_LeIA'], average='weighted')
+metrics_leia_pos_dict = classification_report(rec_leia_pos['fechou'], rec_leia_pos['previsao_LeIA'], output_dict=True)
+metrics_leia_pos = pd.DataFrame(metrics_leia_pos_dict)
+metrics_leia_pos = metrics_leia_pos.transpose()
 
-f1_ml = f1_score(rec_ml['Var_sent'], rec_ml['ML'], average='weighted')
-precision_ml = precision_score(rec_ml['Var_sent'], rec_ml['ML'], average='weighted')
-recall_ml = recall_score(rec_ml['Var_sent'], rec_ml['ML'], average='weighted')
+metrics_ml_dict = classification_report(rec_ml['fechou'], rec_ml['previsao_ml'], output_dict=True)
+metrics_ml = pd.DataFrame(metrics_ml_dict)
+metrics_ml = metrics_ml.transpose()
 
 rec_ml_pos = rec_ml.copy()
-rec_ml_pos['ML'] = 'positive'
+rec_ml_pos['previsao_ml'] = 'Y'
 
-f1_ml_pos = f1_score(rec_ml_pos['Var_sent'], rec_ml_pos['ML'], average='weighted')
-precision_ml_pos = precision_score(rec_ml_pos['Var_sent'], rec_ml_pos['ML'], average='weighted')
-recall_ml_pos = recall_score(rec_ml_pos['Var_sent'], rec_ml_pos['ML'], average='weighted')
+metrics_ml_pos_dict = classification_report(rec_ml_pos['fechou'], rec_ml_pos['previsao_ml'], output_dict=True)
+metrics_ml_pos = pd.DataFrame(metrics_ml_pos_dict)
+metrics_ml_pos = metrics_ml_pos.transpose()
 
-#Display dos resultados
+# #Display dos resultados
 data_fim = {'Modelo': ['LeIA','LeIA POS','ML','ML POS'],
-            'F1 Score': [f1_leia, f1_leia_pos, f1_ml, f1_ml_pos],
-            'Precisão': [precision_leia, precision_leia_pos, precision_ml, precision_ml_pos],
-            'Recall': [recall_leia, recall_leia_pos, recall_ml, recall_ml_pos]}
+            'Precisão': [metrics_leia['precision']['weighted avg'], metrics_leia_pos['precision']['weighted avg'], metrics_ml['precision']['weighted avg'], metrics_ml_pos['precision']['weighted avg']],
+            'Suport': [metrics_leia['support']['weighted avg'], metrics_leia_pos['support']['weighted avg'], metrics_ml['support']['weighted avg'], metrics_ml_pos['support']['weighted avg']]}
 df_data_fim = pd.DataFrame(data_fim)
+print(df_data_fim)
