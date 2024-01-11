@@ -25,6 +25,9 @@ from sklearn.ensemble import RandomForestClassifier
 
 #%% Presets
 
+#Simulação de dinheiro investido
+investimento = 1000
+
 #Thresholds
 sup_leia = 0.3
 inf_leia = -0.5
@@ -32,7 +35,7 @@ pos_ml = 0.337
 neg_ml = 0.343
 
 #Delta para teste de dias anteriores
-delta = 20
+delta = 22
 
 #True ou False para baixar o arquivo da carteira
 download = False
@@ -272,26 +275,30 @@ rec['previsao_ml'] = ' '
 rec['previsao_LeIA'] = ' '
 rec['open'] = ' '
 rec['close_previous'] = ' '
+rec['close_today'] = ' '
 
 #Loop para os tickers desejados
 for i in range(0,len(rec)):
     ticker_symbol = rec.loc[i,'Code']+'.SA'
     
-    # Obter dados intradiários (1 minuto) para o dia atual
+    #Obter dados intradiários (1 minuto) para o dia atual
     data_hoje = yf.download(ticker_symbol, start=end,end=end+timedelta(days=1), interval='1m', progress=False)
+    data_hoje_close = yf.download(ticker_symbol, start=end,end=end+timedelta(days=1), progress=False)
     data_ontem = yf.download(ticker_symbol, start=start, end=end, progress=False)
     
-    # Extrair preços de abertura e fechamento
+    #Extrair preços de abertura e fechamento
     opening_prices = round(data_hoje['Open'],2)
     closing_price = round(data_ontem['Close'][0],2)
+    closing_price_today = round(data_hoje_close['Close'][0],2)
     
     rec.loc[i,'open'] = opening_prices[0]
     rec.loc[i,'close_previous'] = closing_price
+    rec.loc[i,'close_today'] = closing_price_today
     
-    # Verificar se o "gap" foi fechado em algum momento
+    #Verificar se o "gap" foi fechado em algum momento
     gap_closed_at_some_point = closing_price in opening_prices.values
     
-    # Exibir o resultado
+    #Exibir o resultado
     if gap_closed_at_some_point:
         rec.loc[i,'fechou'] = 'Y'
     else:
@@ -299,9 +306,10 @@ for i in range(0,len(rec)):
         
     if opening_prices.iloc[0] > closing_price:
         rec.loc[i,'pfechar'] = 'negative'
-    else:
+    elif opening_prices.iloc[0] < closing_price:
         rec.loc[i,'pfechar'] = 'positive'
-        
+    else: 
+        rec.loc[i,'pfechar'] = 'null'
     
     if rec.loc[i,'ML'] not in ('positive','negative'):
         pass
@@ -316,8 +324,10 @@ for i in range(0,len(rec)):
         rec.loc[i,'previsao_LeIA'] = 'Y'
     else:
         rec.loc[i,'previsao_LeIA'] = 'N'
-    
-
+        
+rec=rec[rec['pfechar']!='null']
+rec=rec.reset_index()        
+        
 #%% Correlação e matrizes de confusão
 
 #Criação dos dataframes de recomendação separados
@@ -332,8 +342,8 @@ conf_mat_leia = confusion_matrix(rec_leia['fechou'], rec_leia['previsao_LeIA'])
 conf_mat_ml = confusion_matrix(rec_ml['fechou'], rec_ml['previsao_ml'])
 
 #Criar dataframe para a matriz de confusão com os nomes das classes
-conf_df_leia = pd.DataFrame(conf_mat_leia, index=nomes_classes_rec, columns=nomes_classes_rec)
-conf_df_ml = pd.DataFrame(conf_mat_ml, index=nomes_classes_rec, columns=nomes_classes_rec)
+conf_df_leia = pd.DataFrame(conf_mat_leia)
+conf_df_ml = pd.DataFrame(conf_mat_ml)
 
 #Plotar a matriz de confusão LeIA usando Seaborn
 title = "Recomendações via LeIA"
@@ -344,7 +354,6 @@ ax.set_ylabel('Actual')
 ax.set_xlabel('Predicted')
 plt.show()
 
-
 #Plotar a matriz de confusão ML usando Seaborn
 title = "Recomendações via ML"
 fig, ax = plt.subplots(figsize=(8, 6))
@@ -353,7 +362,6 @@ ax.set_title(title)
 ax.set_ylabel('Actual')
 ax.set_xlabel('Predicted')
 plt.show()
-
 
 #Cálculo dos indicadores 
 #Os dados POS são uma suposição para se considerassemos que todas as ações fecharão o GAP (base de comparação)
@@ -386,3 +394,56 @@ data_fim = {'Modelo': ['LeIA','LeIA POS','ML','ML POS'],
             'Suport': [metrics_leia['support']['weighted avg'], metrics_leia_pos['support']['weighted avg'], metrics_ml['support']['weighted avg'], metrics_ml_pos['support']['weighted avg']]}
 df_data_fim = pd.DataFrame(data_fim)
 print(df_data_fim)
+
+
+#%% Simulação de compra
+
+rec['comprar_leia'] = 0
+rec['comprar_ml'] = 0
+
+qtd_leia = 0
+qtd_ml = 0
+
+for i in range(0,len(rec)):    
+    #Se pra fechar o gap precisamos de uma variação positiva e a previsão é que o gap será fechado
+    if rec.loc[i,'pfechar'] == 'positive' and rec.loc[i,'previsao_LeIA'] == 'Y':
+        qtd_leia = qtd_leia + 1
+        rec.loc[i,'comprar_leia'] = 1
+    if rec.loc[i,'pfechar'] == 'positive' and rec.loc[i,'previsao_ml'] == 'Y':
+        qtd_ml = qtd_ml + 1
+        rec.loc[i,'comprar_ml'] = 1
+        
+compra_leia = rec[rec['comprar_leia'] == 1]
+compra_ml = rec[rec['comprar_ml'] == 1]
+
+compra_leia = compra_leia.reset_index()
+compra_ml = compra_ml.reset_index()
+
+compra_leia['var'] = ''
+compra_ml['var'] = ''
+compra_leia['lucro'] = ''
+compra_ml['lucro'] = ''
+
+#variação e lucro comprando ações que precisam subir para fechar gap e recomendadas por leia
+for i in range(0,len(compra_leia)):
+    if compra_leia.loc[i,'fechou'] == 'Y':
+        compra_leia.loc[i,'var'] = compra_leia.loc[i,'close_previous']/compra_leia.loc[i,'open']-1
+        compra_leia.loc[i,'lucro'] = investimento/qtd_leia*compra_leia.loc[i,'var']
+    else: 
+        compra_leia.loc[i,'var'] = compra_leia.loc[i,'close_today']/compra_leia.loc[i,'open']-1
+        compra_leia.loc[i,'lucro'] = investimento/qtd_leia*compra_leia.loc[i,'var']
+        
+ #variação e lucro comprando ações que precisam subir para fechar gap e recomendadas por ML       
+for i in range(0,len(compra_ml)):
+    if compra_ml.loc[i,'fechou'] == 'Y':
+        compra_ml.loc[i,'var'] = compra_ml.loc[i,'close_previous']/compra_ml.loc[i,'open']-1
+        compra_ml.loc[i,'lucro'] = investimento/qtd_ml*compra_ml.loc[i,'var']
+    else: 
+        compra_ml.loc[i,'var'] = compra_ml.loc[i,'close_today']/compra_ml.loc[i,'open']-1
+        compra_ml.loc[i,'lucro'] = investimento/qtd_ml*compra_ml.loc[i,'var']
+        
+        
+lucro_leia = compra_leia['lucro'].sum()
+lucro_ml = compra_ml['lucro'].sum()
+
+print('Lucro Leia: ' + str(lucro_leia) + ' / Lucro ML: '+ str(lucro_ml))
