@@ -30,12 +30,12 @@ investimento = 1000
 
 #Thresholds
 sup_leia = 0.3
-inf_leia = -0.5
-pos_ml = 0.337
-neg_ml = 0.343
+inf_leia = -0.3
+pos_ml = 0.33
+neg_ml = 0.33
 
 #Delta para teste de dias anteriores
-delta = 22
+delta = 0
 
 #True ou False para baixar o arquivo da carteira
 download = False
@@ -424,6 +424,9 @@ compra_ml['var'] = ''
 compra_leia['lucro'] = ''
 compra_ml['lucro'] = ''
 
+prev_leia = 0
+prev_ml = 0
+
 #variação e lucro comprando ações que precisam subir para fechar gap e recomendadas por leia
 for i in range(0,len(compra_leia)):
     if compra_leia.loc[i,'fechou'] == 'Y':
@@ -432,8 +435,11 @@ for i in range(0,len(compra_leia)):
     else: 
         compra_leia.loc[i,'var'] = compra_leia.loc[i,'close_today']/compra_leia.loc[i,'open']-1
         compra_leia.loc[i,'lucro'] = investimento/qtd_leia*compra_leia.loc[i,'var']
+     
+    if compra_leia.loc[i,'previsao_LeIA'] == compra_leia.loc[i,'fechou']:
+        prev_leia = prev_leia + 1
         
- #variação e lucro comprando ações que precisam subir para fechar gap e recomendadas por ML       
+#variação e lucro comprando ações que precisam subir para fechar gap e recomendadas por ML       
 for i in range(0,len(compra_ml)):
     if compra_ml.loc[i,'fechou'] == 'Y':
         compra_ml.loc[i,'var'] = compra_ml.loc[i,'close_previous']/compra_ml.loc[i,'open']-1
@@ -442,8 +448,22 @@ for i in range(0,len(compra_ml)):
         compra_ml.loc[i,'var'] = compra_ml.loc[i,'close_today']/compra_ml.loc[i,'open']-1
         compra_ml.loc[i,'lucro'] = investimento/qtd_ml*compra_ml.loc[i,'var']
         
-        
+    if compra_ml.loc[i,'previsao_ml'] ==  compra_ml.loc[i,'fechou']:
+        prev_ml = prev_ml + 1
+            
 lucro_leia = compra_leia['lucro'].sum()
 lucro_ml = compra_ml['lucro'].sum()
 
-print('Lucro Leia: ' + str(lucro_leia) + ' / Lucro ML: '+ str(lucro_ml))
+print('Lucro LeIA: ' + str(lucro_leia) + ' / Lucro ML: '+ str(lucro_ml))
+
+if len(compra_leia) != 0:
+    acerto_leia = prev_leia/len(compra_leia)*100 
+    print('Acerto LeIA: ' + str(acerto_leia) + ' / Quantidade LeIA: ' + str(len(compra_leia)))
+else:
+    print('Compra LeIA está vazio')
+ 
+if len(compra_ml) != 0:
+    acerto_ml = prev_ml/len(compra_ml)*100 
+    print('Acerto ML: '+ str(acerto_ml) + ' / Quantidade ML: '+ str(len(compra_ml)))
+else:
+    print('Compra ML está vazio')
