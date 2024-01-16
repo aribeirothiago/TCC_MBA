@@ -36,11 +36,11 @@ neg_ml = 0.33
 #True ou False para baixar o arquivo da carteira
 download = False
 
-#Especifique as datas de início e fim
-start_date = '2024-01-12'
+#Datas de início e fim (o primeiro dia não é considerado para previsões)
+start_date = '2024-01-10'
 end_date = '2024-01-15'
 
-#Feriados 2024
+#Feriados
 feriados = ['2024-01-01', '2024-02-12','2024-02-13','2024-03-29','2024-05-01','2024-05-30','2024-11-15','2024-12-24','2024-12-25','2024-12-31']
 
 #%% Dias úteis 
@@ -64,7 +64,7 @@ def pw(message):
 
 #%% Início do loop
 
-for k in range(0,len(business_days)):
+for k in range(1,len(business_days)):
     
     #Data de hoje
     hj = business_days[k].strftime('%Y-%m-%d')
@@ -93,6 +93,7 @@ for k in range(0,len(business_days)):
         return 
     
     if download:
+        print("Fazendo download do arquivo da carteira...\n")
         #Escolha do índice e do tempo de espera
         busca_carteira_teorica('ibov',5)
     
@@ -116,6 +117,8 @@ for k in range(0,len(business_days)):
     
     #Criação da lista do dataframe
     df_list = []
+    
+    print("Buscando notícias...\n")
     
     #Loop para buscar notícias que contêm os tickers desejados nas datas desejadas
     for ticker in tickers:
@@ -309,6 +312,8 @@ for k in range(0,len(business_days)):
     rec['close_previous'] = ' '
     rec['close_today'] = ' '
     
+    print("Buscando ações...\n")
+    
     #Loop para os tickers desejados
     for i in range(0,len(rec)):
         ticker_symbol = rec.loc[i,'Code']+'.SA'
@@ -316,25 +321,14 @@ for k in range(0,len(business_days)):
         #Obter dados intradiários (1 minuto) para o dia atual
         data_hoje = yf.download(ticker_symbol, start=business_days[k],end=business_days[k]+timedelta(days=1), interval='1m', progress=False)
         if data_hoje.empty:
-           data_hoje = yf.download(ticker_symbol, start=business_days[k],end=business_days[k]+timedelta(days=1), interval='5m', progress=False) 
+           data_hoje = yf.download(ticker_symbol, start=business_days[k],end=business_days[k]+timedelta(days=1), interval='5m', progress=False)
         data_hoje_close = yf.download(ticker_symbol, start=business_days[k],end=business_days[k]+timedelta(days=1), progress=False)        
-        
-        if k == 0:
-            if business_days[k].weekday() == 0:
-                if business_days[k]-timedelta(days=3) in feriados:
-                     data_ontem = yf.download(ticker_symbol, start=business_days[k]-timedelta(days=4), end=business_days[k]-timedelta(days=3), progress=False)   
-                else:
-                    data_ontem = yf.download(ticker_symbol, start=business_days[k]-timedelta(days=3), end=business_days[k]-timedelta(days=2), progress=False)
-            elif business_days[k]-timedelta(days=1) in feriados:
-                if (business_days[k]-timedelta(days=1)).weekday() == 0:
-                    data_ontem = yf.download(ticker_symbol, start=business_days[k]-timedelta(days=4), end=business_days[k]-timedelta(days=3), progress=False)
-                else:
-                    data_ontem = yf.download(ticker_symbol, start=business_days[k]-timedelta(days=2), end=business_days[k]-timedelta(days=1), progress=False)
-            else:
-                data_ontem = yf.download(ticker_symbol, start=business_days[k]-timedelta(days=1), end=business_days[k], progress=False)
-        else:
-            data_ontem = yf.download(ticker_symbol, start=business_days[k-1], end=business_days[k-1]+timedelta(days=1), progress=False)
-        
+        if data_hoje_close.empty:
+            data_hoje_close = data_hoje.tail(1)
+        data_ontem = yf.download(ticker_symbol, start=business_days[k-1], end=business_days[k-1]+timedelta(days=1), progress=False)
+        if data_ontem.empty:
+            data_ontem = yf.download(ticker_symbol, start=business_days[k-1], end=business_days[k-1]+timedelta(days=1), interval='1m', progress=False).tail(1)
+            
         #Extrair preços de abertura e fechamento
         opening_prices = round(data_hoje['Open'],2)
         closing_price = round(data_ontem['Close'][0],2)
@@ -398,17 +392,20 @@ for k in range(0,len(business_days)):
     fig, ax = plt.subplots(figsize=(8, 6))
     sns.heatmap(conf_df_leia, annot=True, fmt='d', cmap='Blues', ax=ax)
     ax.set_title(title)
-    ax.set_ylabel('Actual')
-    ax.set_xlabel('Predicted')
+    ax.set_ylabel('Real')
+    ax.set_xlabel('Previsto')
+    plt.savefig('./outputs/'+hj+'_calor_leia.png')
     plt.show()
+
     
     #Plotar a matriz de confusão ML usando Seaborn
     title = "Recomendações via ML"
     fig, ax = plt.subplots(figsize=(8, 6))
     sns.heatmap(conf_df_ml, annot=True, fmt='d', cmap='Blues', ax=ax)
     ax.set_title(title)
-    ax.set_ylabel('Actual')
-    ax.set_xlabel('Predicted')
+    ax.set_ylabel('Real')
+    ax.set_xlabel('Previsto')
+    plt.savefig('./outputs/'+hj+'_calor_ml.png')
     plt.show()
     
     #Cálculo dos indicadores 
@@ -475,7 +472,7 @@ for k in range(0,len(business_days)):
     prev_leia = 0
     prev_ml = 0
     
-    #variação e lucro comprando ações que precisam subir para fechar gap e recomendadas por leia
+    #Variação e lucro comprando ações que precisam subir para fechar gap e recomendadas por leia
     for i in range(0,len(compra_leia)):
         if compra_leia.loc[i,'fechou'] == 'Y':
             compra_leia.loc[i,'var'] = compra_leia.loc[i,'close_previous']/compra_leia.loc[i,'open']-1
@@ -487,7 +484,7 @@ for k in range(0,len(business_days)):
         if compra_leia.loc[i,'previsao_LeIA'] == compra_leia.loc[i,'fechou']:
             prev_leia = prev_leia + 1
             
-    #variação e lucro comprando ações que precisam subir para fechar gap e recomendadas por ML       
+    #Variação e lucro comprando ações que precisam subir para fechar gap e recomendadas por ML       
     for i in range(0,len(compra_ml)):
         if compra_ml.loc[i,'fechou'] == 'Y':
             compra_ml.loc[i,'var'] = compra_ml.loc[i,'close_previous']/compra_ml.loc[i,'open']-1
@@ -502,6 +499,7 @@ for k in range(0,len(business_days)):
     lucro_leia = compra_leia['lucro'].sum()
     lucro_ml = compra_ml['lucro'].sum()
     
+    #Saídas
     pw('\n'+'Lucro LeIA: ' + str(lucro_leia) + ' / Lucro ML: '+ str(lucro_ml))
     
     if len(compra_leia) != 0:
@@ -516,8 +514,7 @@ for k in range(0,len(business_days)):
     else:
         pw('Compra ML está vazio')
         
-      
-    
+    #Exportar dataframes de interesse em CSV 
     df.to_csv('./outputs/'+hj+'_df.csv',sep=';')
     metrics_leia.to_csv('./outputs/'+hj+'_metrics_leia.csv',sep=';')
     metrics_ml.to_csv('./outputs/'+hj+'_metrics_ml.csv',sep=';')
@@ -528,5 +525,3 @@ for k in range(0,len(business_days)):
     rec_ml.to_csv('./outputs/'+hj+'_rec_ml.csv',sep=';')
     compra_leia.to_csv('./outputs/'+hj+'_compra_leia.csv',sep=';')
     compra_ml.to_csv('./outputs/'+hj+'_compra_ml.csv',sep=';')
-    
-    

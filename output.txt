@@ -1,15 +1,8 @@
-Delta = 4 / 2024-01-12: 
 
-     Modelo  Precisão  Suport
-0      LeIA  0.833333     8.0
-1  LeIA POS  0.812500     8.0
-2        ML  0.692308    13.0
-3    ML POS  0.751479    13.0
+2024-01-11: 
 
-Lucro LeIA: 0.907346854067792 / Lucro ML: 0
-Acerto LeIA: 100.0 / Quantidade LeIA: 2
-Compra ML está vazio
-Delta = 5 / 2024-01-11: 
+
+2024-01-11: 
 
      Modelo  Precisão  Suport
 0      LeIA  0.875000     6.0
@@ -26,79 +19,8 @@ Acerto ML: 100.0 / Quantidade ML: 1
      Modelo  Precisão  Suport
 0      LeIA  0.833333     8.0
 1  LeIA POS  0.812500     8.0
-2        ML  0.692308    13.0
-3    ML POS  0.751479    13.0
-
-Lucro LeIA: 0.907346854067792 / Lucro ML: 0
-Acerto LeIA: 100.0 / Quantidade LeIA: 2
-Compra ML está vazio
-
-2024-01-15: 
-
-     Modelo  Precisão  Suport
-0      LeIA    1.0000     2.0
-1  LeIA POS    1.0000     2.0
-2        ML    0.8125     4.0
-3    ML POS    0.8125     4.0
-
-Lucro LeIA: 0 / Lucro ML: 0
-Compra LeIA está vazio
-Compra ML está vazio
-
-2024-01-12: 
-
-     Modelo  Precisão  Suport
-0      LeIA  0.625000     8.0
-1  LeIA POS  0.812500     8.0
-2        ML  0.311355    13.0
-3    ML POS  0.751479    13.0
-
-Lucro LeIA: 18.800814326154963 / Lucro ML: 41.37931034482767
-Acerto LeIA: 25.0 / Quantidade LeIA: 4
-Acerto ML: 0.0 / Quantidade ML: 1
-
-2024-01-15: 
-
-     Modelo  Precisão  Suport
-0      LeIA    1.0000     2.0
-1  LeIA POS    1.0000     2.0
-2        ML    0.8125     4.0
-3    ML POS    0.8125     4.0
-
-Lucro LeIA: 0 / Lucro ML: 0
-Compra LeIA está vazio
-Compra ML está vazio
-
-2024-01-12: 
-
-     Modelo  Precisão  Suport
-0      LeIA  0.850000     8.0
-1  LeIA POS  0.812500     8.0
-2        ML  0.480769    13.0
-3    ML POS  0.822485    13.0
-
-Lucro LeIA: 25.44904782604703 / Lucro ML: 41.37931034482767
-Acerto LeIA: 100.0 / Quantidade LeIA: 3
-Acerto ML: 100.0 / Quantidade ML: 1
-
-Lucro LeIA: 25.44904782604703 / Lucro ML: 41.37931034482767
-Acerto LeIA: 100.0 / Quantidade LeIA: 3
-Acerto ML: 100.0 / Quantidade ML: 1
-
-Lucro LeIA: 25.44904782604703 / Lucro ML: 41.37931034482767
-Acerto LeIA: 100.0 / Quantidade LeIA: 3
-Acerto ML: 100.0 / Quantidade ML: 1
-
-2024-01-12: 
-
-
-2024-01-12: 
-
-     Modelo  Precisão  Suport
-0      LeIA  0.833333     8.0
-1  LeIA POS  0.812500     8.0
-2        ML  0.692308    13.0
-3    ML POS  0.751479    13.0
+2        ML  0.666667    12.0
+3    ML POS  0.750000    12.0
 
 Lucro LeIA: 0.907346854067792 / Lucro ML: 0
 Acerto LeIA: 100.0 / Quantidade LeIA: 2
