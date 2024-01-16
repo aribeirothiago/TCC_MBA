@@ -16,12 +16,11 @@ from selenium.webdriver.common.by import By
 from time import sleep
 from pygooglenews import GoogleNews
 from leia import SentimentIntensityAnalyzer
-from datetime import date, time, datetime, timedelta
+from datetime import time, datetime, timedelta
 from unidecode import unidecode
 from sklearn.metrics import classification_report, confusion_matrix
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.ensemble import RandomForestClassifier
-
 
 #%% Presets
 
@@ -34,11 +33,24 @@ inf_leia = -0.3
 pos_ml = 0.33
 neg_ml = 0.33
 
-#Delta para teste de dias anteriores
-deltas = [4,5]
-
 #True ou False para baixar o arquivo da carteira
 download = False
+
+#Especifique as datas de início e fim
+start_date = '2024-01-12'
+end_date = '2024-01-15'
+
+#Feriados 2024
+feriados = ['2024-01-01', '2024-02-12','2024-02-13','2024-03-29','2024-05-01','2024-05-30','2024-11-15','2024-12-24','2024-12-25','2024-12-31']
+
+#%% Dias úteis 
+
+#Crie um array de datas entre a data de início e fim
+date_range = pd.date_range(start=start_date, end=end_date)
+
+#Use a função isin() para verificar se cada data é um dia útil (segunda a sexta)
+business_days = date_range[date_range.to_series().dt.dayofweek < 5]
+business_days = business_days[~business_days.isin(feriados)]
 
 #%% Função para saída em arquivo e console
 
@@ -52,14 +64,12 @@ def pw(message):
 
 #%% Início do loop
 
-for k in range(0,len(deltas)):
-    
-    delta = deltas[k]
+for k in range(0,len(business_days)):
     
     #Data de hoje
-    hj = (date.today()-timedelta(days=delta)).strftime('%Y-%m-%d')
+    hj = business_days[k].strftime('%Y-%m-%d')
     
-    pw('\nDelta = '+str(delta)+' / ' + hj +': \n')
+    pw('\n' + hj +': \n')
     
 
     #%% Busca da carteira que compõe o índice desejado no dia
@@ -97,8 +107,8 @@ for k in range(0,len(deltas)):
     #%% Buscar notícias
     
     #Data das notícias
-    end =  date.today()-timedelta(days=delta)
-    endtime = datetime.combine(date.today()-timedelta(days=delta),time(10, 0))
+    end =  business_days[k]
+    endtime = datetime.combine(business_days[k],time(10, 0))
     start = end-timedelta(days=1)
                 
     #Inicialização e configuração
@@ -304,9 +314,26 @@ for k in range(0,len(deltas)):
         ticker_symbol = rec.loc[i,'Code']+'.SA'
         
         #Obter dados intradiários (1 minuto) para o dia atual
-        data_hoje = yf.download(ticker_symbol, start=end,end=end+timedelta(days=1), interval='1m', progress=False)
-        data_hoje_close = yf.download(ticker_symbol, start=end,end=end+timedelta(days=1), progress=False)
-        data_ontem = yf.download(ticker_symbol, start=start, end=end, progress=False)
+        data_hoje = yf.download(ticker_symbol, start=business_days[k],end=business_days[k]+timedelta(days=1), interval='1m', progress=False)
+        if data_hoje.empty:
+           data_hoje = yf.download(ticker_symbol, start=business_days[k],end=business_days[k]+timedelta(days=1), interval='5m', progress=False) 
+        data_hoje_close = yf.download(ticker_symbol, start=business_days[k],end=business_days[k]+timedelta(days=1), progress=False)        
+        
+        if k == 0:
+            if business_days[k].weekday() == 0:
+                if business_days[k]-timedelta(days=3) in feriados:
+                     data_ontem = yf.download(ticker_symbol, start=business_days[k]-timedelta(days=4), end=business_days[k]-timedelta(days=3), progress=False)   
+                else:
+                    data_ontem = yf.download(ticker_symbol, start=business_days[k]-timedelta(days=3), end=business_days[k]-timedelta(days=2), progress=False)
+            elif business_days[k]-timedelta(days=1) in feriados:
+                if (business_days[k]-timedelta(days=1)).weekday() == 0:
+                    data_ontem = yf.download(ticker_symbol, start=business_days[k]-timedelta(days=4), end=business_days[k]-timedelta(days=3), progress=False)
+                else:
+                    data_ontem = yf.download(ticker_symbol, start=business_days[k]-timedelta(days=2), end=business_days[k]-timedelta(days=1), progress=False)
+            else:
+                data_ontem = yf.download(ticker_symbol, start=business_days[k]-timedelta(days=1), end=business_days[k], progress=False)
+        else:
+            data_ontem = yf.download(ticker_symbol, start=business_days[k-1], end=business_days[k-1]+timedelta(days=1), progress=False)
         
         #Extrair preços de abertura e fechamento
         opening_prices = round(data_hoje['Open'],2)
@@ -316,7 +343,6 @@ for k in range(0,len(deltas)):
         rec.loc[i,'open'] = opening_prices[0]
         rec.loc[i,'close_previous'] = closing_price
         rec.loc[i,'close_today'] = closing_price_today
-        
         #Verificar se o "gap" foi fechado em algum momento
         gap_closed_at_some_point = closing_price in opening_prices.values
         
