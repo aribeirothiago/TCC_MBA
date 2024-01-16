@@ -35,16 +35,32 @@ pos_ml = 0.33
 neg_ml = 0.33
 
 #Delta para teste de dias anteriores
-deltas = [1,2]
+deltas = [4,5]
 
 #True ou False para baixar o arquivo da carteira
 download = False
+
+#%% Função para saída em arquivo e console
+
+def pw(message):
+    #Console
+    print(message)
+    
+    #Arquivo
+    with open('output.txt', 'a') as file:
+        file.write(str(message) + '\n')
+
+#%% Início do loop
 
 for k in range(0,len(deltas)):
     
     delta = deltas[k]
     
-    print('Delta = '+str(delta))
+    #Data de hoje
+    hj = (date.today()-timedelta(days=delta)).strftime('%Y-%m-%d')
+    
+    pw('\nDelta = '+str(delta)+' / ' + hj +': \n')
+    
 
     #%% Busca da carteira que compõe o índice desejado no dia
     
@@ -399,7 +415,7 @@ for k in range(0,len(deltas)):
                 'Precisão': [metrics_leia['precision']['weighted avg'], metrics_leia_pos['precision']['weighted avg'], metrics_ml['precision']['weighted avg'], metrics_ml_pos['precision']['weighted avg']],
                 'Suport': [metrics_leia['support']['weighted avg'], metrics_leia_pos['support']['weighted avg'], metrics_ml['support']['weighted avg'], metrics_ml_pos['support']['weighted avg']]}
     df_data_fim = pd.DataFrame(data_fim)
-    print(df_data_fim)
+    pw(df_data_fim)
     
     
     #%% Simulação de compra
@@ -460,16 +476,31 @@ for k in range(0,len(deltas)):
     lucro_leia = compra_leia['lucro'].sum()
     lucro_ml = compra_ml['lucro'].sum()
     
-    print('Lucro LeIA: ' + str(lucro_leia) + ' / Lucro ML: '+ str(lucro_ml))
+    pw('\n'+'Lucro LeIA: ' + str(lucro_leia) + ' / Lucro ML: '+ str(lucro_ml))
     
     if len(compra_leia) != 0:
         acerto_leia = prev_leia/len(compra_leia)*100 
-        print('Acerto LeIA: ' + str(acerto_leia) + ' / Quantidade LeIA: ' + str(len(compra_leia)))
+        pw('Acerto LeIA: ' + str(acerto_leia) + ' / Quantidade LeIA: ' + str(len(compra_leia)))
     else:
-        print('Compra LeIA está vazio')
+        pw('Compra LeIA está vazio')
      
     if len(compra_ml) != 0:
         acerto_ml = prev_ml/len(compra_ml)*100 
-        print('Acerto ML: '+ str(acerto_ml) + ' / Quantidade ML: '+ str(len(compra_ml)))
+        pw('Acerto ML: '+ str(acerto_ml) + ' / Quantidade ML: '+ str(len(compra_ml)))
     else:
-        print('Compra ML está vazio')
+        pw('Compra ML está vazio')
+        
+      
+    
+    df.to_csv('./outputs/'+hj+'_df.csv',sep=';')
+    metrics_leia.to_csv('./outputs/'+hj+'_metrics_leia.csv',sep=';')
+    metrics_ml.to_csv('./outputs/'+hj+'_metrics_ml.csv',sep=';')
+    metrics_leia_pos.to_csv('./outputs/'+hj+'_metrics_leia_pos.csv',sep=';')
+    metrics_ml_pos.to_csv('./outputs/'+hj+'_metrics_ml_pos.csv',sep=';')
+    rec.to_csv('./outputs/'+hj+'_rec.csv',sep=';')
+    rec_leia.to_csv('./outputs/'+hj+'_rec_leia.csv',sep=';')
+    rec_ml.to_csv('./outputs/'+hj+'_rec_ml.csv',sep=';')
+    compra_leia.to_csv('./outputs/'+hj+'_compra_leia.csv',sep=';')
+    compra_ml.to_csv('./outputs/'+hj+'_compra_ml.csv',sep=';')
+    
+    

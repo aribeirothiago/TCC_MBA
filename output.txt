@@ -1,0 +1,22 @@
+Delta = 4 / 2024-01-12: 
+
+     Modelo  Precisão  Suport
+0      LeIA  0.833333     8.0
+1  LeIA POS  0.812500     8.0
+2        ML  0.692308    13.0
+3    ML POS  0.751479    13.0
+
+Lucro LeIA: 0.907346854067792 / Lucro ML: 0
+Acerto LeIA: 100.0 / Quantidade LeIA: 2
+Compra ML está vazio
+Delta = 5 / 2024-01-11: 
+
+     Modelo  Precisão  Suport
+0      LeIA  0.875000     6.0
+1  LeIA POS  0.861111     6.0
+2        ML  0.576471    17.0
+3    ML POS  0.854671    17.0
+
+Lucro LeIA: 2.8392958546281655 / Lucro ML: 0.5514705882352366
+Acerto LeIA: 100.0 / Quantidade LeIA: 1
+Acerto ML: 100.0 / Quantidade ML: 1
