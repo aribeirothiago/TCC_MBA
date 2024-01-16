@@ -28,20 +28,20 @@ from sklearn.ensemble import RandomForestClassifier
 investimento = 1000
 
 #Thresholds
-sup_leia = 0.3
-inf_leia = -0.3
-pos_ml = 0.33
-neg_ml = 0.33
+sup_leia = 0.5
+inf_leia = -0.7
+pos_ml = 0.36
+neg_ml = 0.37
 
 #True ou False para baixar o arquivo da carteira
 download = False
 
 #Datas de início e fim (o primeiro dia não é considerado para previsões)
-start_date = '2024-01-10'
-end_date = '2024-01-15'
+start_date = '2023-12-18'
+end_date = '2024-01-16'
 
 #Feriados
-feriados = ['2024-01-01', '2024-02-12','2024-02-13','2024-03-29','2024-05-01','2024-05-30','2024-11-15','2024-12-24','2024-12-25','2024-12-31']
+feriados = ['2023-29-12','2023-25-12','2024-01-01', '2024-02-12','2024-02-13','2024-03-29','2024-05-01','2024-05-30','2024-11-15','2024-12-24','2024-12-25','2024-12-31']
 
 #%% Dias úteis 
 
@@ -387,26 +387,31 @@ for k in range(1,len(business_days)):
     conf_df_leia = pd.DataFrame(conf_mat_leia)
     conf_df_ml = pd.DataFrame(conf_mat_ml)
     
-    #Plotar a matriz de confusão LeIA usando Seaborn
-    title = "Recomendações via LeIA"
-    fig, ax = plt.subplots(figsize=(8, 6))
-    sns.heatmap(conf_df_leia, annot=True, fmt='d', cmap='Blues', ax=ax)
-    ax.set_title(title)
-    ax.set_ylabel('Real')
-    ax.set_xlabel('Previsto')
-    plt.savefig('./outputs/'+hj+'_calor_leia.png')
-    plt.show()
+    try:
+        #Plotar a matriz de confusão LeIA usando Seaborn
+        title = "Recomendações via LeIA"
+        fig, ax = plt.subplots(figsize=(8, 6))
+        sns.heatmap(conf_df_leia, annot=True, fmt='d', cmap='Blues', ax=ax)
+        ax.set_title(title)
+        ax.set_ylabel('Real')
+        ax.set_xlabel('Previsto')
+        plt.savefig('./outputs/'+hj+'_calor_leia.png')
+        plt.show()
+    except:
+        pass
 
-    
-    #Plotar a matriz de confusão ML usando Seaborn
-    title = "Recomendações via ML"
-    fig, ax = plt.subplots(figsize=(8, 6))
-    sns.heatmap(conf_df_ml, annot=True, fmt='d', cmap='Blues', ax=ax)
-    ax.set_title(title)
-    ax.set_ylabel('Real')
-    ax.set_xlabel('Previsto')
-    plt.savefig('./outputs/'+hj+'_calor_ml.png')
-    plt.show()
+    try:
+        #Plotar a matriz de confusão ML usando Seaborn
+        title = "Recomendações via ML"
+        fig, ax = plt.subplots(figsize=(8, 6))
+        sns.heatmap(conf_df_ml, annot=True, fmt='d', cmap='Blues', ax=ax)
+        ax.set_title(title)
+        ax.set_ylabel('Real')
+        ax.set_xlabel('Previsto')
+        plt.savefig('./outputs/'+hj+'_calor_ml.png')
+        plt.show()
+    except:
+        pass
     
     #Cálculo dos indicadores 
     #Os dados POS são uma suposição para se considerassemos que todas as ações fecharão o GAP (base de comparação)
