@@ -33,7 +33,7 @@ investimento = 1000
 # sup_leia = 0.5
 # inf_leia = -0.7
 # pos_ml = 0.36
-# neg_ml = 0.37,
+# neg_ml = 0.37
 
 #CUSTO BENEFÍCIO
 sup_leia = 0.35
@@ -48,8 +48,12 @@ pa = 0.01
 download = False
 
 #Datas de início e fim (o primeiro dia não é considerado para previsões)
-start_date = '2023-12-18'
-end_date = '2024-01-16'
+start_date = '2023-11-20'
+end_date = '2023-12-15'
+
+#Intervalo para busca de preço das ações (Opções: 1m, 2m, 5m, 15m, 30m, 60m, 90m, 1h, 1d, 5d, 1wk, 1mo, 3mo)
+intervalo1='2m'
+intervalo2='5m'
 
 #Feriados
 feriados = ['2023-12-25','2023-12-29','2024-01-01', '2024-02-12','2024-02-13','2024-03-29','2024-05-01','2024-05-30','2024-11-15','2024-12-24','2024-12-25','2024-12-31']
@@ -334,9 +338,9 @@ for k in range(1,len(business_days)):
         ticker_symbol = rec.loc[i,'Code']+'.SA'
         
         #Obter dados intradiários (1 minuto) para o dia atual
-        data_hoje = yf.download(ticker_symbol, start=business_days[k],end=business_days[k]+timedelta(days=1), interval='1m', progress=False)
+        data_hoje = yf.download(ticker_symbol, start=business_days[k],end=business_days[k]+timedelta(days=1), interval=intervalo1, progress=False)
         if data_hoje.empty:
-           data_hoje = yf.download(ticker_symbol, start=business_days[k],end=business_days[k]+timedelta(days=1), interval='5m', progress=False)
+           data_hoje = yf.download(ticker_symbol, start=business_days[k],end=business_days[k]+timedelta(days=1), interval=intervalo2, progress=False)
         data_hoje_close = yf.download(ticker_symbol, start=business_days[k],end=business_days[k]+timedelta(days=1), progress=False)        
         if data_hoje_close.empty:
             data_hoje_close = data_hoje.tail(1)
