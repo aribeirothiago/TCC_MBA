@@ -1,3 +1,216 @@
 
 2023-12-19: 
 
+     Modelo  Precisão  Suport
+0      LeIA      0.60     5.0
+1  LeIA POS      0.84     5.0
+2        ML      0.85     5.0
+3    ML POS      0.76     5.0
+
+Lucro LeIA: 5.233111322549888 / Lucro ML: 0
+Acerto LeIA: 0.0 / Quantidade LeIA: 1
+Compra ML está vazio
+
+2023-12-20: 
+
+     Modelo  Precisão  Suport
+0      LeIA  0.300000     5.0
+1  LeIA POS  0.760000     5.0
+2        ML  0.777778     3.0
+3    ML POS  0.777778     3.0
+
+Lucro LeIA: 4.43936266751721 / Lucro ML: 0
+Acerto LeIA: 50.0 / Quantidade LeIA: 4
+Compra ML está vazio
+
+2023-12-21: 
+
+     Modelo  Precisão  Suport
+0      LeIA  0.800000     6.0
+1  LeIA POS  0.777778     6.0
+2        ML  0.812500     4.0
+3    ML POS  0.812500     4.0
+
+Lucro LeIA: 0 / Lucro ML: 0
+Compra LeIA está vazio
+Compra ML está vazio
+
+2023-12-22: 
+
+     Modelo  Precisão  Suport
+0      LeIA  1.000000     4.0
+1  LeIA POS  1.000000     4.0
+2        ML  0.833333     4.0
+3    ML POS  0.750000     4.0
+
+Lucro LeIA: 0 / Lucro ML: 0
+Compra LeIA está vazio
+Compra ML está vazio
+
+2023-12-26: 
+
+     Modelo  Precisão  Suport
+0      LeIA      1.00     2.0
+1  LeIA POS      0.75     2.0
+2        ML      1.00     1.0
+3    ML POS      1.00     1.0
+
+Lucro LeIA: 1.6968325791855143 / Lucro ML: 0
+Acerto LeIA: 100.0 / Quantidade LeIA: 1
+Compra ML está vazio
+
+2023-12-27: 
+
+     Modelo  Precisão  Suport
+0      LeIA  0.840000     5.0
+1  LeIA POS  0.840000     5.0
+2        ML  0.777778     3.0
+3    ML POS  0.777778     3.0
+
+Lucro LeIA: 1.1219481845704777 / Lucro ML: 0
+Acerto LeIA: 80.0 / Quantidade LeIA: 5
+Compra ML está vazio
+
+2023-12-28: 
+
+     Modelo  Precisão  Suport
+0      LeIA    1.0000     7.0
+1  LeIA POS    1.0000     7.0
+2        ML    0.8750     4.0
+3    ML POS    0.8125     4.0
+
+Lucro LeIA: 0.4539949025583212 / Lucro ML: 0
+Acerto LeIA: 100.0 / Quantidade LeIA: 4
+Compra ML está vazio
+
+2024-01-02: 
+
+     Modelo  Precisão  Suport
+0      LeIA  0.777778     3.0
+1  LeIA POS  0.777778     3.0
+2        ML  0.683333     8.0
+3    ML POS  0.812500     8.0
+
+Lucro LeIA: -5.384615384615389 / Lucro ML: -4.939550949913712
+Acerto LeIA: 33.33333333333333 / Quantidade LeIA: 3
+Acerto ML: 33.33333333333333 / Quantidade ML: 3
+
+2024-01-03: 
+
+     Modelo  Precisão  Suport
+0      LeIA       1.0     3.0
+1  LeIA POS       1.0     3.0
+2        ML       1.0     7.0
+3    ML POS       1.0     7.0
+
+Lucro LeIA: -1.9888305171757223 / Lucro ML: 5.208333333333481
+Acerto LeIA: 100.0 / Quantidade LeIA: 3
+Acerto ML: 100.0 / Quantidade ML: 1
+
+2024-01-04: 
+
+     Modelo  Precisão  Suport
+0      LeIA       1.0     2.0
+1  LeIA POS       1.0     2.0
+2        ML       1.0     2.0
+3    ML POS       1.0     2.0
+
+Lucro LeIA: 3.058358299182662 / Lucro ML: 0
+Acerto LeIA: 100.0 / Quantidade LeIA: 2
+Compra ML está vazio
+
+2024-01-05: 
+
+     Modelo  Precisão  Suport
+0      LeIA       1.0     4.0
+1  LeIA POS       1.0     4.0
+2        ML       1.0     4.0
+3    ML POS       1.0     4.0
+
+Lucro LeIA: 3.107718018839245 / Lucro ML: 0
+Acerto LeIA: 100.0 / Quantidade LeIA: 2
+Compra ML está vazio
+
+2024-01-08: 
+
+     Modelo  Precisão  Suport
+0      LeIA       1.0     2.0
+1  LeIA POS       1.0     2.0
+2        ML       1.0     2.0
+3    ML POS       1.0     2.0
+
+Lucro LeIA: 6.432756562427144 / Lucro ML: 5.589979724480276
+Acerto LeIA: 100.0 / Quantidade LeIA: 2
+Acerto ML: 100.0 / Quantidade ML: 2
+
+2024-01-09: 
+
+     Modelo  Precisão  Suport
+0      LeIA      1.00     4.0
+1  LeIA POS      0.75     4.0
+2        ML      0.60     5.0
+3    ML POS      0.76     5.0
+
+Lucro LeIA: 2.340335533390636 / Lucro ML: -4.198717948717952
+Acerto LeIA: 100.0 / Quantidade LeIA: 2
+Acerto ML: 50.0 / Quantidade ML: 2
+
+2024-01-10: 
+
+     Modelo  Precisão  Suport
+0      LeIA      0.30     5.0
+1  LeIA POS      0.76     5.0
+2        ML      0.50     6.0
+3    ML POS      0.75     6.0
+
+Lucro LeIA: 0 / Lucro ML: 0
+Compra LeIA está vazio
+Compra ML está vazio
+
+2024-01-11: 
+
+     Modelo  Precisão  Suport
+0      LeIA  0.875000     4.0
+1  LeIA POS  0.812500     4.0
+2        ML  0.454545    11.0
+3    ML POS  0.801653    11.0
+
+Lucro LeIA: 5.644402634054524 / Lucro ML: 0
+Acerto LeIA: 100.0 / Quantidade LeIA: 1
+Compra ML está vazio
+
+2024-01-12: 
+
+     Modelo  Precisão  Suport
+0      LeIA  0.866667     5.0
+1  LeIA POS  0.760000     5.0
+2        ML  1.000000     3.0
+3    ML POS  1.000000     3.0
+
+Lucro LeIA: 1.528722164755525 / Lucro ML: 0
+Acerto LeIA: 100.0 / Quantidade LeIA: 2
+Compra ML está vazio
+
+2024-01-15: 
+
+     Modelo  Precisão  Suport
+0      LeIA  1.000000     1.0
+1  LeIA POS  1.000000     1.0
+2        ML  0.428571     7.0
+3    ML POS  0.755102     7.0
+
+Lucro LeIA: 0 / Lucro ML: -2.0370224727517217
+Compra LeIA está vazio
+Acerto ML: 50.0 / Quantidade ML: 4
+
+2024-01-16: 
+
+     Modelo  Precisão  Suport
+0      LeIA  1.000000     4.0
+1  LeIA POS  1.000000     4.0
+2        ML  0.500000     8.0
+3    ML POS  0.765625     8.0
+
+Lucro LeIA: -10.0 / Lucro ML: -10.0
+Acerto LeIA: 0.0 / Quantidade LeIA: 3
+Acerto ML: 0.0 / Quantidade ML: 1

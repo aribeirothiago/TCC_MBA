@@ -63,6 +63,11 @@ date_range = pd.date_range(start=start_date, end=end_date)
 business_days = date_range[date_range.to_series().dt.dayofweek < 5]
 business_days = business_days[~business_days.isin(feriados)]
 
+#%% Datasets para simulação de lucro
+
+compra_leia_total = pd.DataFrame(columns=['Dia','Acerto','Quantidade','Lucro'])
+compra_ml_total = pd.DataFrame(columns=['Dia','Acerto','Quantidade','Lucro'])
+    
 #%% Função para saída em arquivo e console
 
 def pw(message):
@@ -461,12 +466,9 @@ for k in range(1,len(business_days)):
     
     
     #%% Simulação de compra
-    
-    compra_leia_total = pd.DataFrame(columns=['Dia','Acerto','Quantidade','Lucro'])
-    compra_ml_total = pd.DataFrame(columns=['Dia','Acerto','Quantidade','Lucro'])
-    
-    compra_leia_total.loc[i,'Dia'] = hj
-    compra_ml_total.loc[i,'Dia'] = hj
+
+    compra_leia_total.loc[k,'Dia'] = hj
+    compra_ml_total.loc[k,'Dia'] = hj
     
     rec['comprar_leia'] = 0
     rec['comprar_ml'] = 0
@@ -536,30 +538,30 @@ for k in range(1,len(business_days)):
     lucro_leia = compra_leia['lucro'].sum()
     lucro_ml = compra_ml['lucro'].sum()
     
-    compra_ml_total.loc[i,'Lucro'] = lucro_ml
-    compra_leia_total.loc[i,'Lucro'] = lucro_leia
+    compra_ml_total.loc[k,'Lucro'] = lucro_ml
+    compra_leia_total.loc[k,'Lucro'] = lucro_leia
     
-    compra_leia_total.loc[i,'Quantidade'] = str(len(compra_leia))
-    compra_ml_total.loc[i,'Quantidade'] = str(len(compra_ml))
-    
+    compra_leia_total.loc[k,'Quantidade'] = str(len(compra_leia))
+    compra_ml_total.loc[k,'Quantidade'] = str(len(compra_ml))
+
     #Saídas
     pw('\n'+'Lucro LeIA: ' + str(lucro_leia) + ' / Lucro ML: '+ str(lucro_ml))
     
     if len(compra_leia) != 0:
         acerto_leia = prev_leia/len(compra_leia)*100 
         pw('Acerto LeIA: ' + str(acerto_leia) + ' / Quantidade LeIA: ' + str(len(compra_leia)))
-        compra_leia_total.loc[i,'Acerto'] = acerto_leia
+        compra_leia_total.loc[k,'Acerto'] = acerto_leia
     else:
         pw('Compra LeIA está vazio')
-        compra_leia_total.loc[i,'Acerto'] = np.nan
+        compra_leia_total.loc[k,'Acerto'] = np.nan
      
     if len(compra_ml) != 0:
         acerto_ml = prev_ml/len(compra_ml)*100 
         pw('Acerto ML: '+ str(acerto_ml) + ' / Quantidade ML: '+ str(len(compra_ml)))
-        compra_ml_total.loc[i,'Acerto'] = acerto_ml
+        compra_ml_total.loc[k,'Acerto'] = acerto_ml
     else:
         pw('Compra ML está vazio')
-        compra_ml_total.loc[i,'Acerto'] = np.nan
+        compra_ml_total.loc[k,'Acerto'] = np.nan
         
     #Exportar dataframes de interesse em CSV 
     df.to_csv('./outputs/'+hj+'_df.csv',sep=';')
