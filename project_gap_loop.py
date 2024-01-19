@@ -26,6 +26,8 @@ from sklearn.ensemble import RandomForestClassifier
 
 #Simulação de dinheiro investido
 investimento = 1000
+investimento_acumulado_leia = 1000
+investimento_acumulado_ml = 1000
 
 #Thresholds
 
@@ -48,15 +50,15 @@ pa = 0.01
 download = False
 
 #Datas de início e fim (o primeiro dia não é considerado para previsões)
-start_date = '2023-11-20'
-end_date = '2023-12-15'
+start_date = '2023-01-01'
+end_date = '2024-01-01'
 
 #Intervalo para busca de preço das ações (Opções: 1m, 2m, 5m, 15m, 30m, 60m, 90m, 1h, 1d, 5d, 1wk, 1mo, 3mo)
-intervalo1='2m'
-intervalo2='5m'
+intervalo1='1h'
+intervalo2='1h'
 
 #Feriados
-feriados = ['2023-12-25','2023-12-29','2024-01-01', '2024-02-12','2024-02-13','2024-03-29','2024-05-01','2024-05-30','2024-11-15','2024-12-24','2024-12-25','2024-12-31']
+feriados = ['2023-02-20','2023-02-21','2023-04-07','2023-04-21','2023-05-01','2023-06-08','2023-09-07','2023-10-12','2023-11-02','2023-12-25','2023-12-29','2024-01-01', '2024-02-12','2024-02-13','2024-03-29','2024-05-01','2024-05-30','2024-11-15','2024-12-24','2024-12-25','2024-12-31']
 
 #%% Dias úteis 
 
@@ -69,8 +71,8 @@ business_days = business_days[~business_days.isin(feriados)]
 
 #%% Datasets para simulação de lucro
 
-compra_leia_total = pd.DataFrame(columns=['Dia','Acerto','Quantidade','Lucro'])
-compra_ml_total = pd.DataFrame(columns=['Dia','Acerto','Quantidade','Lucro'])
+compra_leia_total = pd.DataFrame(columns=['Dia','Acerto','Quantidade','Lucro','Lucro Acumulado'])
+compra_ml_total = pd.DataFrame(columns=['Dia','Acerto','Quantidade','Lucro','Lucro Acumulado'])
     
 #%% Função para saída em arquivo e console
 
@@ -499,6 +501,8 @@ for k in range(1,len(business_days)):
     compra_ml['var'] = ''
     compra_leia['lucro'] = ''
     compra_ml['lucro'] = ''
+    compra_leia['lucro_acumulado'] = ''
+    compra_ml['lucro_acumulado'] = ''
     
     prev_leia = 0
     prev_ml = 0
@@ -509,14 +513,17 @@ for k in range(1,len(business_days)):
             if compra_leia.iloc[i,j] <= (1-pa)*compra_leia.loc[i,'open']:
                 compra_leia.loc[i,'var'] = -pa
                 compra_leia.loc[i,'lucro'] = investimento/qtd_leia*compra_leia.loc[i,'var']
+                compra_leia.loc[i,'lucro_acumulado'] = investimento_acumulado_leia/qtd_leia*compra_leia.loc[i,'var']
                 break
             elif compra_leia.iloc[i,j] >= compra_leia.loc[i,'close_previous']:
                 compra_leia.loc[i,'var'] = compra_leia.iloc[i,j]/compra_leia.loc[i,'open']-1
                 compra_leia.loc[i,'lucro'] = investimento/qtd_leia*compra_leia.loc[i,'var']
+                compra_leia.loc[i,'lucro_acumulado'] = investimento_acumulado_leia/qtd_leia*compra_leia.loc[i,'var']
                 break
             else:
                 compra_leia.loc[i,'var'] = compra_leia.loc[i,'close_today']/compra_leia.loc[i,'open']-1
                 compra_leia.loc[i,'lucro'] = investimento/qtd_leia*compra_leia.loc[i,'var']
+                compra_leia.loc[i,'lucro_acumulado'] = investimento_acumulado_leia/qtd_leia*compra_leia.loc[i,'var']
          
         if compra_leia.loc[i,'previsao_LeIA'] == compra_leia.loc[i,'fechou']:
             prev_leia = prev_leia + 1
@@ -527,29 +534,37 @@ for k in range(1,len(business_days)):
             if compra_ml.iloc[i,j] <= (1-pa)*compra_ml.loc[i,'open']:
                 compra_ml.loc[i,'var'] = -pa
                 compra_ml.loc[i,'lucro'] = investimento/qtd_ml*compra_ml.loc[i,'var']
+                compra_ml.loc[i,'lucro_acumulado'] = investimento_acumulado_ml/qtd_ml*compra_ml.loc[i,'var']
                 break
             elif compra_ml.iloc[i,j] == compra_ml.loc[i,'close_previous']:
                 compra_ml.loc[i,'var'] = compra_ml.loc[i,'close_previous']/compra_ml.loc[i,'open']-1
                 compra_ml.loc[i,'lucro'] = investimento/qtd_ml*compra_ml.loc[i,'var']
+                compra_ml.loc[i,'lucro_acumulado'] = investimento_acumulado_ml/qtd_ml*compra_ml.loc[i,'var']
                 break
             else:
                 compra_ml.loc[i,'var'] = compra_ml.loc[i,'close_today']/compra_ml.loc[i,'open']-1
                 compra_ml.loc[i,'lucro'] = investimento/qtd_ml*compra_ml.loc[i,'var']
+                compra_ml.loc[i,'lucro_acumulado'] = investimento_acumulado_ml/qtd_ml*compra_ml.loc[i,'var']
          
         if compra_ml.loc[i,'previsao_ml'] == compra_ml.loc[i,'fechou']:
             prev_ml = prev_ml + 1   
                 
     lucro_leia = compra_leia['lucro'].sum()
     lucro_ml = compra_ml['lucro'].sum()
+    lucro_acumulado_leia = compra_leia['lucro_acumulado'].sum()
+    lucro_acumulado_ml = compra_ml['lucro_acumulado'].sum()
     
     compra_ml_total.loc[k,'Lucro'] = lucro_ml
     compra_leia_total.loc[k,'Lucro'] = lucro_leia
+    compra_ml_total.loc[k,'Lucro Acumulado'] = lucro_acumulado_ml
+    compra_leia_total.loc[k,'Lucro Acumulado'] = lucro_acumulado_leia
     
     compra_leia_total.loc[k,'Quantidade'] = str(len(compra_leia))
     compra_ml_total.loc[k,'Quantidade'] = str(len(compra_ml))
 
     #Saídas
     pw('\n'+'Lucro LeIA: ' + str(lucro_leia) + ' / Lucro ML: '+ str(lucro_ml))
+    pw('Lucro Acumulado LeIA: ' + str(lucro_acumulado_leia) + ' / Lucro Acumulado ML: '+ str(lucro_acumulado_ml))
     
     if len(compra_leia) != 0:
         acerto_leia = prev_leia/len(compra_leia)*100 
@@ -566,6 +581,10 @@ for k in range(1,len(business_days)):
     else:
         pw('Compra ML está vazio')
         compra_ml_total.loc[k,'Acerto'] = np.nan
+        
+    #Ajuste investimento acumulado
+    investimento_acumulado_leia = investimento_acumulado_leia + lucro_leia
+    investimento_acumulado_ml = investimento_acumulado_ml + lucro_ml
         
     #Exportar dataframes de interesse em CSV 
     df.to_csv('./outputs/'+hj+'_df.csv',sep=';')
