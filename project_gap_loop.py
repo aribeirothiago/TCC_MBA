@@ -50,8 +50,8 @@ pa = 0.01
 download = False
 
 #Datas de início e fim (o primeiro dia não é considerado para previsões)
-start_date = '2023-01-01'
-end_date = '2024-01-01'
+start_date = '2023-02-17'
+end_date = '2023-02-22'
 
 #Intervalo para busca de preço das ações (Opções: 1m, 2m, 5m, 15m, 30m, 60m, 90m, 1h, 1d, 5d, 1wk, 1mo, 3mo)
 intervalo1='1h'
@@ -511,7 +511,7 @@ for k in range(1,len(business_days)):
         
         #Variação e lucro comprando ações que precisam subir para fechar gap e recomendadas por LeIA
         for i in range(0,len(compra_leia)):
-            for j in range(15,compra_leia.shape[1]):
+            for j in range(15,compra_leia.shape[1]-5):
                 if compra_leia.iloc[i,j] <= (1-pa)*compra_leia.loc[i,'open']:
                     compra_leia.loc[i,'var'] = compra_leia.iloc[i,j]/compra_leia.loc[i,'open']-1
                     compra_leia.loc[i,'lucro'] = investimento/qtd_leia*compra_leia.loc[i,'var']
@@ -532,7 +532,7 @@ for k in range(1,len(business_days)):
         
         #Variação e lucro comprando ações que precisam subir para fechar gap e recomendadas por ML
         for i in range(0,len(compra_ml)):      
-            for j in range(15,compra_ml.shape[1]):
+            for j in range(15,compra_ml.shape[1]-5):
                 if compra_ml.iloc[i,j] <= (1-pa)*compra_ml.loc[i,'open']:
                     compra_ml.loc[i,'var'] = compra_ml.iloc[i,j]/compra_ml.loc[i,'open']-1
                     compra_ml.loc[i,'lucro'] = investimento/qtd_ml*compra_ml.loc[i,'var']
