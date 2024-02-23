@@ -26,8 +26,9 @@ from sklearn.ensemble import RandomForestClassifier
 
 #Simulação de dinheiro investido
 investimento = 100
-investimento_acumulado_leia = 100
-investimento_acumulado_ml = 100
+investimento_acumulado_leia = investimento
+investimento_acumulado_ml = investimento
+investimento_acumulado_gap = investimento
 
 #Thresholds
 
@@ -50,12 +51,12 @@ pa = 0.01
 download = False
 
 #Datas de início e fim (o primeiro dia não é considerado para previsões)
-start_date = '2023-02-17'
-end_date = '2023-02-22'
+start_date = '2024-01-01'
+end_date = '2024-02-22'
 
 #Intervalo para busca de preço das ações (Opções: 1m, 2m, 5m, 15m, 30m, 60m, 90m, 1h, 1d, 5d, 1wk, 1mo, 3mo)
-intervalo1='1h'
-intervalo2='1h'
+intervalo1='5m'
+intervalo2='15m'
 
 #Feriados
 feriados = ['2023-02-20','2023-02-21','2023-04-07','2023-04-21','2023-05-01','2023-06-08','2023-09-07','2023-10-12','2023-11-02','2023-12-25','2023-12-29','2024-01-01', '2024-02-12','2024-02-13','2024-03-29','2024-05-01','2024-05-30','2024-11-15','2024-12-24','2024-12-25','2024-12-31']
@@ -73,6 +74,7 @@ business_days = business_days[~business_days.isin(feriados)]
 
 compra_leia_total = pd.DataFrame(columns=['Dia','Acerto','Quantidade','Lucro','Lucro Acumulado'])
 compra_ml_total = pd.DataFrame(columns=['Dia','Acerto','Quantidade','Lucro','Lucro Acumulado'])
+compra_gap_total = pd.DataFrame(columns=['Dia','Acerto','Quantidade','Lucro','Lucro Acumulado'])
     
 #%% Função para saída em arquivo e console
 
@@ -477,14 +479,18 @@ for k in range(1,len(business_days)):
     
         compra_leia_total.loc[k,'Dia'] = hj
         compra_ml_total.loc[k,'Dia'] = hj
+        compra_gap_total.loc[k,'Dia'] = hj
         
         rec['comprar_leia'] = 0
         rec['comprar_ml'] = 0
+        rec['comprar_gap'] = 0
         
         qtd_leia = 0
         qtd_ml = 0
+        qtd_gap = 0
         
-        for i in range(0,len(rec)):    
+        for i in range(0,len(rec)):
+            
             #Se pra fechar o gap precisamos de uma variação positiva e a previsão é que o gap será fechado
             if rec.loc[i,'pfechar'] == 'positive' and rec.loc[i,'previsao_LeIA'] == 'Y':
                 qtd_leia = qtd_leia + 1
@@ -493,25 +499,36 @@ for k in range(1,len(business_days)):
                 qtd_ml = qtd_ml + 1
                 rec.loc[i,'comprar_ml'] = 1
                 
+            #Se pra fechar o gap precisamos de uma variação positiva 
+            if rec.loc[i,'pfechar'] == 'positive':
+                qtd_gap = qtd_gap + 1
+                rec.loc[i,'comprar_gap'] = 1
+                
         compra_leia = rec[rec['comprar_leia'] == 1]
         compra_ml = rec[rec['comprar_ml'] == 1]
+        compra_gap = rec[rec['comprar_gap'] == 1]
         
         compra_leia = compra_leia.reset_index(drop=True)
         compra_ml = compra_ml.reset_index(drop=True)
+        compra_gap = compra_gap.reset_index(drop=True)
         
         compra_leia['var'] = ''
         compra_ml['var'] = ''
+        compra_gap['var'] = ''
         compra_leia['lucro'] = ''
         compra_ml['lucro'] = ''
+        compra_gap['lucro'] = ''
         compra_leia['lucro_acumulado'] = ''
         compra_ml['lucro_acumulado'] = ''
+        compra_gap['lucro_acumulado'] = ''
         
         prev_leia = 0
         prev_ml = 0
+        prev_gap = 0
         
         #Variação e lucro comprando ações que precisam subir para fechar gap e recomendadas por LeIA
         for i in range(0,len(compra_leia)):
-            for j in range(15,compra_leia.shape[1]-5):
+            for j in range(15,compra_leia.shape[1]-6):
                 if compra_leia.iloc[i,j] <= (1-pa)*compra_leia.loc[i,'open']:
                     compra_leia.loc[i,'var'] = compra_leia.iloc[i,j]/compra_leia.loc[i,'open']-1
                     compra_leia.loc[i,'lucro'] = investimento/qtd_leia*compra_leia.loc[i,'var']
@@ -532,7 +549,7 @@ for k in range(1,len(business_days)):
         
         #Variação e lucro comprando ações que precisam subir para fechar gap e recomendadas por ML
         for i in range(0,len(compra_ml)):      
-            for j in range(15,compra_ml.shape[1]-5):
+            for j in range(15,compra_ml.shape[1]-6):
                 if compra_ml.iloc[i,j] <= (1-pa)*compra_ml.loc[i,'open']:
                     compra_ml.loc[i,'var'] = compra_ml.iloc[i,j]/compra_ml.loc[i,'open']-1
                     compra_ml.loc[i,'lucro'] = investimento/qtd_ml*compra_ml.loc[i,'var']
@@ -550,23 +567,49 @@ for k in range(1,len(business_days)):
              
             if compra_ml.loc[i,'previsao_ml'] == compra_ml.loc[i,'fechou']:
                 prev_ml = prev_ml + 1   
+                
+        #Variação e lucro comprando ações que precisam subir para fechar gap
+        for i in range(0,len(compra_gap)):      
+             for j in range(15,compra_gap.shape[1]-6):
+                 if compra_gap.iloc[i,j] <= (1-pa)*compra_gap.loc[i,'open']:
+                     compra_gap.loc[i,'var'] = compra_gap.iloc[i,j]/compra_gap.loc[i,'open']-1
+                     compra_gap.loc[i,'lucro'] = investimento/qtd_gap*compra_gap.loc[i,'var']
+                     compra_gap.loc[i,'lucro_acumulado'] = investimento_acumulado_gap/qtd_gap*compra_gap.loc[i,'var']
+                     break
+                 elif compra_gap.iloc[i,j] >= compra_gap.loc[i,'close_previous']:
+                     compra_gap.loc[i,'var'] = compra_gap.iloc[i,j]/compra_gap.loc[i,'open']-1
+                     compra_gap.loc[i,'lucro'] = investimento/qtd_gap*compra_gap.loc[i,'var']
+                     compra_gap.loc[i,'lucro_acumulado'] = investimento_acumulado_gap/qtd_gap*compra_gap.loc[i,'var']
+                     break
+                 else:
+                     compra_gap.loc[i,'var'] = compra_gap.loc[i,'close_today']/compra_gap.loc[i,'open']-1
+                     compra_gap.loc[i,'lucro'] = investimento/qtd_gap*compra_gap.loc[i,'var']
+                     compra_gap.loc[i,'lucro_acumulado'] = investimento_acumulado_gap/qtd_gap*compra_gap.loc[i,'var']
+              
+             if compra_gap.loc[i,'fechou'] == 'Y':
+                 prev_gap = prev_gap + 1
                     
         lucro_leia = compra_leia['lucro'].sum()
         lucro_ml = compra_ml['lucro'].sum()
+        lucro_gap = compra_gap['lucro'].sum()
         lucro_acumulado_leia = compra_leia['lucro_acumulado'].sum()
         lucro_acumulado_ml = compra_ml['lucro_acumulado'].sum()
+        lucro_acumulado_gap = compra_gap['lucro_acumulado'].sum()
         
         compra_ml_total.loc[k,'Lucro'] = lucro_ml
         compra_leia_total.loc[k,'Lucro'] = lucro_leia
+        compra_gap_total.loc[k,'Lucro'] = lucro_gap
         compra_ml_total.loc[k,'Lucro Acumulado'] = lucro_acumulado_ml
         compra_leia_total.loc[k,'Lucro Acumulado'] = lucro_acumulado_leia
+        compra_gap_total.loc[k,'Lucro Acumulado'] = lucro_acumulado_gap
         
         compra_leia_total.loc[k,'Quantidade'] = str(len(compra_leia))
         compra_ml_total.loc[k,'Quantidade'] = str(len(compra_ml))
+        compra_gap_total.loc[k,'Quantidade'] = str(len(compra_gap))
     
         #Saídas
-        pw('\n'+'Lucro LeIA: ' + str(lucro_leia) + ' / Lucro ML: '+ str(lucro_ml))
-        pw('Lucro Acumulado LeIA: ' + str(lucro_acumulado_leia) + ' / Lucro Acumulado ML: '+ str(lucro_acumulado_ml))
+        pw('\n'+'Lucro LeIA: ' + str(lucro_leia) + ' / Lucro ML: '+ str(lucro_ml) + ' / Lucro Gap: '+ str(lucro_gap))
+        pw('Lucro Acumulado LeIA: ' + str(lucro_acumulado_leia) + ' / Lucro Acumulado ML: '+ str(lucro_acumulado_ml) + ' / Lucro Acumulado Gap: '+ str(lucro_acumulado_gap))
         
         if len(compra_leia) != 0:
             acerto_leia = prev_leia/len(compra_leia)*100 
@@ -584,9 +627,18 @@ for k in range(1,len(business_days)):
             pw('Compra ML está vazio')
             compra_ml_total.loc[k,'Acerto'] = np.nan
             
+        if len(compra_gap) != 0:
+            acerto_gap = prev_gap/len(compra_gap)*100 
+            pw('Acerto Gap: '+ str(acerto_gap) + ' / Quantidade Gap: '+ str(len(compra_gap)))
+            compra_gap_total.loc[k,'Acerto'] = acerto_gap
+        else:
+            pw('Compra Gap está vazio')
+            compra_gap_total.loc[k,'Acerto'] = np.nan
+            
         #Ajuste investimento acumulado
         investimento_acumulado_leia = investimento_acumulado_leia + lucro_leia
         investimento_acumulado_ml = investimento_acumulado_ml + lucro_ml
+        investimento_acumulado_gap = investimento_acumulado_gap + lucro_gap
             
         #Exportar dataframes de interesse em CSV 
         df.to_csv('./outputs/'+hj+'_df.csv',sep=';')
@@ -599,6 +651,7 @@ for k in range(1,len(business_days)):
         rec_ml.to_csv('./outputs/'+hj+'_rec_ml.csv',sep=';')
         compra_leia.to_csv('./outputs/'+hj+'_compra_leia.csv',sep=';')
         compra_ml.to_csv('./outputs/'+hj+'_compra_ml.csv',sep=';')
+        compra_gap.to_csv('./outputs/'+hj+'_compra_gap.csv',sep=';')
         
     except Exception as e:
         
@@ -608,3 +661,4 @@ for k in range(1,len(business_days)):
     
 compra_leia_total.to_csv('./outputs/compra_leia_total.csv',sep=';')
 compra_ml_total.to_csv('./outputs/compra_ml_total.csv',sep=';')
+compra_gap_total.to_csv('./outputs/compra_gap_total.csv',sep=';')
