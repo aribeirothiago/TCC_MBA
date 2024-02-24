@@ -9,3 +9,14 @@ Exception type: TypeError
 
 2023-01-23: 
 
+     Modelo  Precisão  Suport
+0      LeIA  1.000000     1.0
+1  LeIA POS  1.000000     1.0
+2        ML  1.000000     3.0
+3    ML POS  0.777778     3.0
+
+Lucro LeIA: 0 / Lucro ML: 0 / Lucro Gap: 0.7791563846540095
+Lucro Acumulado LeIA: 0 / Lucro Acumulado ML: 0 / Lucro Acumulado Gap: 0.7791563846540095
+Compra LeIA está vazio
+Compra ML está vazio
+Acerto Gap: 60.0 / Quantidade Gap: 5

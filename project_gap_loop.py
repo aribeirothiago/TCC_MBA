@@ -38,7 +38,7 @@ investimento_acumulado_gap = investimento
 # pos_ml = 0.36
 # neg_ml = 0.37
 
-# Custo Benefício
+## Custo Benefício
 sup_leia = 0.35
 inf_leia = -0.55
 pos_ml = 0.34
@@ -48,11 +48,11 @@ neg_ml = 0.345
 pa = 0.01
 
 # True ou False para baixar o arquivo da carteira 
-download = False
+download = True
 
 # Datas de início e fim (o primeiro dia não é considerado para previsões)
-start_date = '2023-01-20'
-end_date = '2023-01-23'
+start_date = '2023-01-01'
+end_date = '2023-12-31'
 
 # Intervalo para busca de preço das ações (Opções: 1m, 2m, 5m, 15m, 30m, 60m, 90m, 1h, 1d, 5d, 1wk, 1mo, 3mo)
 intervalo1='1h'
@@ -63,10 +63,10 @@ feriados = ['2023-02-20','2023-02-21','2023-04-07','2023-04-21','2023-05-01','20
 
 #%% DIAS ÚTEIS
 
-#C rie um array de datas entre a data de início e fim
+# Cria um array de datas entre a data de início e fim
 date_range = pd.date_range(start=start_date, end=end_date)
 
-# Use a função isin() para verificar se cada data é um dia útil (segunda a sexta)
+# Usa a função isin() para verificar se cada data é um dia útil (segunda a sexta)
 business_days = date_range[date_range.to_series().dt.dayofweek < 5]
 business_days = business_days[~business_days.isin(feriados)]
 
@@ -337,8 +337,8 @@ for k in range(1,len(business_days)):
         
         print("Buscando ações...\n")
         
-        todrop = np.zeros(len(rec))
         # Loop para os tickers desejados
+        todrop = np.zeros(len(rec))
         for i in range(0,len(rec)):
             ticker_symbol = rec.loc[i,'Code']+'.SA'
             
@@ -398,6 +398,7 @@ for k in range(1,len(business_days)):
             else:
                 rec.loc[i,'previsao_LeIA'] = 'N'
                 
+        # Ajuste e limpeza do dataframe    
         rec=pd.concat([rec,opens],axis=1)
         rec=rec[rec['pfechar']!='null'] 
         for i in range(0,len(todrop)):
