@@ -1,4 +1,4 @@
-#%% Imports
+#%% IMPORTS
 import pandas as pd
 import yfinance as yf
 import seaborn as sns
@@ -22,61 +22,61 @@ from sklearn.metrics import classification_report, confusion_matrix
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.ensemble import RandomForestClassifier
 
-#%% Presets
+#%% ENTRADAS
 
-#Simulação de dinheiro investido
+# Simulação de dinheiro investido
 investimento = 100
 investimento_acumulado_leia = investimento
 investimento_acumulado_ml = investimento
 investimento_acumulado_gap = investimento
 
-#Thresholds
+# Thresholds
 
-#CONSERVADOR
+## Conservador
 # sup_leia = 0.5
 # inf_leia = -0.7
 # pos_ml = 0.36
 # neg_ml = 0.37
 
-#CUSTO BENEFÍCIO
+# Custo Benefício
 sup_leia = 0.35
 inf_leia = -0.55
 pos_ml = 0.34
 neg_ml = 0.345
 
-#Perda aceitável
+# Perda aceitável
 pa = 0.01
 
-#True ou False para baixar o arquivo da carteira 
+# True ou False para baixar o arquivo da carteira 
 download = False
 
-#Datas de início e fim (o primeiro dia não é considerado para previsões)
-start_date = '2024-01-01'
-end_date = '2024-02-22'
+# Datas de início e fim (o primeiro dia não é considerado para previsões)
+start_date = '2023-01-20'
+end_date = '2023-01-23'
 
-#Intervalo para busca de preço das ações (Opções: 1m, 2m, 5m, 15m, 30m, 60m, 90m, 1h, 1d, 5d, 1wk, 1mo, 3mo)
-intervalo1='5m'
-intervalo2='15m'
+# Intervalo para busca de preço das ações (Opções: 1m, 2m, 5m, 15m, 30m, 60m, 90m, 1h, 1d, 5d, 1wk, 1mo, 3mo)
+intervalo1='1h'
+intervalo2='1h'
 
-#Feriados
+# Feriados
 feriados = ['2023-02-20','2023-02-21','2023-04-07','2023-04-21','2023-05-01','2023-06-08','2023-09-07','2023-10-12','2023-11-02','2023-12-25','2023-12-29','2024-01-01', '2024-02-12','2024-02-13','2024-03-29','2024-05-01','2024-05-30','2024-11-15','2024-12-24','2024-12-25','2024-12-31']
 
-#%% Dias úteis 
+#%% DIAS ÚTEIS
 
-#Crie um array de datas entre a data de início e fim
+#C rie um array de datas entre a data de início e fim
 date_range = pd.date_range(start=start_date, end=end_date)
 
-#Use a função isin() para verificar se cada data é um dia útil (segunda a sexta)
+# Use a função isin() para verificar se cada data é um dia útil (segunda a sexta)
 business_days = date_range[date_range.to_series().dt.dayofweek < 5]
 business_days = business_days[~business_days.isin(feriados)]
 
-#%% Datasets para simulação de lucro
+#%% DATASETS PARA SIMULAÇÃO DE LUCRO
 
 compra_leia_total = pd.DataFrame(columns=['Dia','Acerto','Quantidade','Lucro','Lucro Acumulado'])
 compra_ml_total = pd.DataFrame(columns=['Dia','Acerto','Quantidade','Lucro','Lucro Acumulado'])
 compra_gap_total = pd.DataFrame(columns=['Dia','Acerto','Quantidade','Lucro','Lucro Acumulado'])
     
-#%% Função para saída em arquivo e console
+#%% FUNÇÃO PARA SAÍDA EM ARQUIVO E CONSOLE
 
 def pw(message):
     #Console
@@ -86,46 +86,46 @@ def pw(message):
     with open('output.txt', 'a') as file:
         file.write(str(message) + '\n')
 
-#%% Criação e teste do modelo ML (a partir de um trabalho no Kaggle: https://www.kaggle.com/code/zeneto11/ml-nlp/notebook - spaCy Random Forest foi o melhor caso)
+#%% CRIAÇÃO E TESTE DO MODELO ML (FONTE: https://www.kaggle.com/code/zeneto11/ml-nlp/notebook)
      
-#Dataset do Kaggle (https://www.kaggle.com/datasets/mateuspicanco/financial-phrase-bank-portuguese-translation)
+# Dataset (Fonte: https://www.kaggle.com/datasets/mateuspicanco/financial-phrase-bank-portuguese-translation)
 df_sent = pd.read_csv('financial_phrase_bank_pt_br.csv')
 
-#Dividir dataframe em dados de teste e treinamento
+# Dividir dataframe em dados de teste e treinamento
 df_train = df_sent[:-400]
 df_test = df_sent[-400:]
 
-#Resampling para balancear classes
+# Resampling para balancear classes
 df_negative = df_train[df_train['y'] == 'negative']
 df_neutral = df_train[df_train['y'] == 'neutral'].sample(n=len(df_negative) // 3, random_state=42)
 df_positive = df_train[df_train['y'] == 'positive'].sample(n=len(df_negative) // 3, random_state=42)
 
-#Concatenar os DataFrames resampleados
+# Concatenar os DataFrames resampleados
 df_balanced = pd.concat([df_negative, df_neutral, df_positive])
 
-#Juntar com as ocorrências preservadas de teste
+# Juntar com as ocorrências preservadas de teste
 df_con = pd.concat([df_balanced, df_test])
 
-#Dataset somente com as notícias em português
+# Dataset somente com as notícias em português
 df_pt = df_con.drop('text', axis=1)
 
-#Removeracentos e pontuações
+# Remover acentos e pontuações
 df_pt['text_pt'] = df_pt['text_pt'].apply(lambda x: unidecode(re.sub(r'[^\w\s]', '', x)))
 
-#Utilizar POS tagging do spaCy: remove todas as palavras que não são substantivos, verbos ou adjetivos 
+# Utilizar POS tagging do spaCy: remove todas as palavras que não são substantivos, verbos ou adjetivos 
 df_pt_spc = df_pt.copy()
 nlp = spacy.load('pt_core_news_sm')
 df_pt_spc['text_pt'] = df_pt_spc['text_pt'].apply(lambda x: ' '.join([token.lemma_ for token in nlp(x) if not token.is_stop and token.pos_ in 
                                                           ['NOUN', 'VERB','ADJ', 'AUX', 'PROP']]))
-#Separar variáveis de entrada (X) e saída (y)
+# Separar variáveis de entrada (X) e saída (y)
 X_pt_spc = df_pt_spc['text_pt']
 y_pt_spc = df_pt_spc['y']
 
-#Converter as sentenças em vetores TF-IDF usando o TfidfVectorizer
+# Converter as sentenças em vetores TF-IDF usando o TfidfVectorizer
 vectorizer = TfidfVectorizer()
 X_tfidf_pt_spc = vectorizer.fit_transform(X_pt_spc)
 
-#Divisão treino e teste
+# Divisão treino e teste
 def split_data(X, y, split_point=-400):
     X_train = X[:split_point]
     y_train = y[:split_point]
@@ -149,23 +149,22 @@ def train_and_evaluate_model(X_train, y_train, X_test, y_test):
     metrics = classification_report(y_test, y_pred, output_dict=True)
     return model_rf, metrics, y_pred
 
-#Treinamento e teste do modelo
+# Treinamento e teste do modelo
 model_rf_spc, metrics_spc, y_pred_rf_spc = train_and_evaluate_model(X_train_pt_spc, y_train_pt_spc, X_test_pt_spc, y_test_pt_spc)
 
 df_resultados = pd.DataFrame(metrics_spc)
 df_resultados = df_resultados.transpose()
 
-
-#Definir os nomes das classes
+# Definir os nomes das classes
 nomes_classes = ['negative', 'positive', 'neutral']
 
-#Criar a matriz de confusão
+# Criar a matriz de confusão
 conf_mat_rf = confusion_matrix(y_test_pt_spc, y_pred_rf_spc)
 
-#Criar DataFrame para a matriz de confusão com os nomes das classes
+# Criar DataFrame para a matriz de confusão com os nomes das classes
 conf_mat_rf_df = pd.DataFrame(conf_mat_rf, index=nomes_classes, columns=nomes_classes)
 
-#Plotar a matriz de confusão usando Seaborn
+# Plotar a matriz de confusão usando Seaborn
 title = "Modelo com Random Forest"
 fig, ax = plt.subplots(figsize=(8, 6))
 sns.heatmap(conf_mat_rf_df, annot=True, fmt='d', cmap='Blues', ax=ax)
@@ -174,7 +173,7 @@ ax.set_ylabel('Actual')
 ax.set_xlabel('Predicted')
 plt.show()
 
-#%% Busca da carteira que compõe o índice desejado no dia
+#%% BUSCA DA CARTEIRA QUE COMPÕE O ÍNDICE DESEJADO NO DIA
 
 def busca_carteira_teorica(indice, espera=8):
     
@@ -199,108 +198,108 @@ if download:
     #Escolha do índice e do tempo de espera
     busca_carteira_teorica('ibov',5)
 
-#Ler arquivo que foi baixado
+# Ler arquivo que foi baixado
 list_of_files = glob.glob(str(pathlib.Path.home())+'/Downloads/*.csv')
 latest_file = max(list_of_files, key=os.path.getctime)
 carteira = pd.read_csv(latest_file, sep=';', encoding='ISO-8859-1',skipfooter=2, engine='python', thousands='.', decimal=',', header=1, index_col=False)
 
-#Criar dataframe com os tickers da carteira
+# Criar dataframe com os tickers da carteira
 tickers = carteira['Código']
 
-#%% Início do loop
+#%% INÍCIO DO LOOP
 
 for k in range(1,len(business_days)):
     
     try:
         
-        #Data de hoje
+        # Data de hoje
         hj = business_days[k].strftime('%Y-%m-%d')
         
         pw('\n' + hj +': \n')
         
-        #%% Buscar notícias
+        #%% BUSCAR NOTÍCIAS
         
-        #Data das notícias
+        # Data das notícias
         end =  business_days[k]
         endtime = datetime.combine(business_days[k],time(10, 0))
         start = end-timedelta(days=1)
                     
-        #Inicialização e configuração
+        # Inicialização e configuração
         gn = GoogleNews(lang='pt', country='BR')
         
-        #Criação da lista do dataframe
+        # Criação da lista do dataframe
         df_list = []
         
         print("Buscando notícias...\n")
         
-        #Loop para buscar notícias que contêm os tickers desejados nas datas desejadas
+        # Loop para buscar notícias que contêm os tickers desejados nas datas desejadas
         for ticker in tickers:
             # Eliminar resultados com "varzea" para evitar links indesejados
             search = gn.search(f'"{ticker}" -varzea', from_=start.strftime('%Y-%m-%d'), to_=(end+timedelta(days=1)).strftime('%Y-%m-%d'))
             
-            #Criar um dataframe para o ticker atual e juntar com a lista
+            # Criar um dataframe para o ticker atual e juntar com a lista
             ticker_data = [[ticker, item.title, item.published, None] for item in search['entries'] if ticker in item.title]
             df_ticker = pd.DataFrame(ticker_data, columns=["Code", "Title", "Datetime","Score_LeIA"])
             df_list.append(df_ticker)
         
-        #Concatenar e transformar em dataframe
+        # Concatenar e transformar em dataframe
         df = pd.concat(df_list, ignore_index=True)
         df = df[pd.to_datetime(df['Datetime'])<=endtime]
         df = df.reset_index(drop=True)
                     
-        #%% Sentiment Analysis - LeIA (https://github.com/rafjaa/LeIA)
+        #%% SENTIMENT ANALYSIS LEIA (Fonte: https://github.com/rafjaa/LeIA)
         
-        #Inicialização
+        # Inicialização
         sia = SentimentIntensityAnalyzer()
         
-        #Cálculo do score com base no título da notícia
+        # Cálculo do score com base no título da notícia
         for i in range(0,len(df)):
             scores = sia.polarity_scores(df.loc[i,'Title'])      
             df.loc[i,'Score_LeIA'] = scores['compound']
             
-        #%% Previsão ML
+        #%% PREVISÃO ML
         
-        #Criação do dataframe com os títulos para previsão
+        # Criação do dataframe com os títulos para previsão
         df_pred = pd.DataFrame(columns=['Title'])
         
-        #Remover acentos e pontuações
+        # Remover acentos e pontuações
         df_pred['Title'] = df['Title'].apply(lambda x: unidecode(re.sub(r'[^\w\s]', '', x)))
         
-        #Utilizar POS tagging do spaCy: remove todas as palavras que não são substantivos, verbos ou adjetivos 
+        # Utilizar POS tagging do spaCy: remove todas as palavras que não são substantivos, verbos ou adjetivos 
         df_pt_spc_pred = df_pred.copy()
         nlp = spacy.load('pt_core_news_sm')
         df_pt_spc_pred['Title'] = df_pt_spc_pred['Title'].apply(lambda x: ' '.join([token.lemma_ for token in nlp(x) if not token.is_stop and token.pos_ in 
                                                                   ['NOUN', 'VERB','ADJ', 'AUX', 'PROP']]))
-        #Variável de teste
+        # Variável de teste
         X_pred= df_pt_spc_pred['Title']
         
-        #Converter as sentenças em vetores TF-IDF usando o TfidfVectorizer:
+        # Converter as sentenças em vetores TF-IDF usando o TfidfVectorizer:
         X_tfidf_pt_spc_pred = vectorizer.transform(X_pred)
         
-        #Previsão do modelo
+        # Previsão do modelo
         df['ML_proba_neg'] = model_rf_spc.predict_proba(X_tfidf_pt_spc_pred)[:,0]
         df['ML_proba_neu'] = model_rf_spc.predict_proba(X_tfidf_pt_spc_pred)[:,1]
         df['ML_proba_pos'] = model_rf_spc.predict_proba(X_tfidf_pt_spc_pred)[:,2]
         
-        #Calcular a classe prevista com base nas probabilidades
+        # Calcular a classe prevista com base nas probabilidades
         df['ML_predicted_class'] = np.argmax(df[['ML_proba_neg', 'ML_proba_neu', 'ML_proba_pos']].values, axis=1)
         
-        #%% Recomendações: verificar ações que tendem a subir ou cair
+        #%% RECOMENDAÇÕES: VERIFICAR AÇÕES QUE TENDEM A SUBIR OU CAIR
         
-        #Fazer uma média dos scores de todas as notícias com determinado ticker para LeIA
+        # Fazer uma média dos scores de todas as notícias com determinado ticker para LeIA
         rec1 = df[['Code','Score_LeIA']].groupby(['Code']).mean()
         
-        #Fazer uma média dos scores de todas as notícias com determinado ticker para ML
+        # Fazer uma média dos scores de todas as notícias com determinado ticker para ML
         rec2 = df[['Code','ML_proba_neg','ML_proba_neu','ML_proba_pos','ML_predicted_class']].groupby('Code').mean()
         
-        #Juntar os dataframes
+        # Juntar os dataframes
         rec = pd.merge(rec1, rec2, on='Code', how='outer')
         
-        #Resetar o índice do dataframe
+        # Resetar o índice do dataframe
         rec = rec.reset_index()
         
         rec['Rec_LeIA'] = ' '
-        #Loop para recomendações LeIA
+        # Loop para recomendações LeIA
         for i in range(0,len(rec)):
         
             if rec.loc[i,'Score_LeIA'] >= sup_leia:
@@ -311,7 +310,7 @@ for k in range(1,len(business_days)):
                 rec.loc[i,'Rec_LeIA'] = 'neutral'
                 
         rec['ML']=''
-        #Loop para recomendações ML
+        # Loop para recomendações ML
         for i in range(0,len(rec)):
             
             if rec.loc[i,'ML_proba_neu'] < rec.loc[i,'ML_proba_neg'] or rec.loc[i,'ML_proba_neu'] < rec.loc[i,'ML_proba_pos']:       
@@ -324,9 +323,9 @@ for k in range(1,len(business_days)):
             else:
                 rec.loc[i,'ML'] = 'neutral'
         
-        #%% Obter variação da ação no dia
+        #%% OBTER VARIAÇÃO DA AÇÃO NO DIA
         
-        #Criar coluna para variações
+        # Criar coluna para variações
         rec['fechou'] = ' '
         rec['pfechar'] = ' '
         rec['previsao_ml'] = ' '
@@ -338,12 +337,12 @@ for k in range(1,len(business_days)):
         
         print("Buscando ações...\n")
         
-        
-        #Loop para os tickers desejados
+        todrop = np.zeros(len(rec))
+        # Loop para os tickers desejados
         for i in range(0,len(rec)):
             ticker_symbol = rec.loc[i,'Code']+'.SA'
             
-            #Obter dados intradiários (1 minuto) para o dia atual
+            # Obter dados intradiários para o dia atual
             data_hoje = yf.download(ticker_symbol, start=business_days[k],end=business_days[k]+timedelta(days=1), interval=intervalo1, progress=False)
             if data_hoje.empty:
                data_hoje = yf.download(ticker_symbol, start=business_days[k],end=business_days[k]+timedelta(days=1), interval=intervalo2, progress=False)
@@ -354,18 +353,23 @@ for k in range(1,len(business_days)):
             if data_ontem.empty:
                 data_ontem = yf.download(ticker_symbol, start=business_days[k-1], end=business_days[k-1]+timedelta(days=1), interval='1m', progress=False).tail(1)
                 
-            #Extrair preços de abertura e fechamento
+            # Extrair preços de abertura e fechamento
             opening_prices = round(data_hoje['Open'],2)
             closing_price = round(data_ontem['Close'][0],2)
             closing_price_today = round(data_hoje_close['Close'][0],2)
-              
+                         
             opens = pd.concat([opens, opening_prices.to_frame().transpose()], ignore_index=True)
             
             rec.loc[i,'open'] = opening_prices[0]
             rec.loc[i,'close_previous'] = closing_price
             rec.loc[i,'close_today'] = closing_price_today
             
-            #Verificar se o "gap" foi fechado em algum momento
+            # Se o preços de abertura for muito menor ou maior (2 vezes) que o preço de fechamento, descartar ticker (evita erro causado por bugs na biblioteca)
+            if rec.loc[i,'open'] > 2*rec.loc[i,'close_previous'] or 2*rec.loc[i,'open'] < rec.loc[i,'close_previous']:
+                todrop[i] = 1
+                continue
+            
+            # Verificar se o "gap" foi fechado em algum momento
             for j in range(0,len(opening_prices.values)):
                 if opening_prices.values[j] >= closing_price:
                     rec.loc[i,'fechou'] = 'Y'
@@ -394,30 +398,32 @@ for k in range(1,len(business_days)):
             else:
                 rec.loc[i,'previsao_LeIA'] = 'N'
                 
-        rec =pd.concat([rec,opens],axis=1)
-                
-        rec=rec[rec['pfechar']!='null']
+        rec=pd.concat([rec,opens],axis=1)
+        rec=rec[rec['pfechar']!='null'] 
+        for i in range(0,len(todrop)):
+            if todrop[i] == 1:
+                rec.drop(i, inplace=True)
         rec=rec.reset_index(drop=True)      
                 
-        #%% Correlação e matrizes de confusão
+        #%% CORRELAÇÃO E MATRIZES DE CONFUSÃO
         
-        #Criação dos dataframes de recomendação separados
+        # Criação dos dataframes de recomendação separados
         rec_leia = rec[rec['Rec_LeIA'] != 'neutral'][['Code','previsao_LeIA','fechou']]
         rec_ml = rec[rec['ML'] != 'neutral'][['Code','previsao_ml','fechou']]
         
-        #Definir os nomes das classes
+        # Definir os nomes das classes
         nomes_classes_rec = ['negative', 'positive']
         
-        #Criar as matrizez de confusão
+        # Criar as matrizez de confusão
         conf_mat_leia = confusion_matrix(rec_leia['fechou'], rec_leia['previsao_LeIA'])
         conf_mat_ml = confusion_matrix(rec_ml['fechou'], rec_ml['previsao_ml'])
         
-        #Criar dataframe para a matriz de confusão com os nomes das classes
+        # Criar dataframe para a matriz de confusão com os nomes das classes
         conf_df_leia = pd.DataFrame(conf_mat_leia)
         conf_df_ml = pd.DataFrame(conf_mat_ml)
         
         try:
-            #Plotar a matriz de confusão LeIA usando Seaborn
+            # Plotar a matriz de confusão LeIA usando Seaborn
             title = "Recomendações via LeIA"
             fig, ax = plt.subplots(figsize=(8, 6))
             sns.heatmap(conf_df_leia, annot=True, fmt='d', cmap='Blues', ax=ax)
@@ -430,7 +436,7 @@ for k in range(1,len(business_days)):
             pass
     
         try:
-            #Plotar a matriz de confusão ML usando Seaborn
+            # Plotar a matriz de confusão ML usando Seaborn
             title = "Recomendações via ML"
             fig, ax = plt.subplots(figsize=(8, 6))
             sns.heatmap(conf_df_ml, annot=True, fmt='d', cmap='Blues', ax=ax)
@@ -442,9 +448,9 @@ for k in range(1,len(business_days)):
         except:
             pass
         
-        #Cálculo dos indicadores 
-        #Os dados POS são uma suposição para se considerassemos que todas as ações fecharão o GAP (base de comparação)
-        #LeIA e ML podem ter quantidades diferentes devido à exclusão de neutros
+        # Cálculo dos indicadores 
+        # Os dados POS são uma suposição para se considerassemos que todas as ações fecharão o GAP (base de comparação)
+        # LeIA e ML podem ter quantidades diferentes devido à exclusão de neutros
         metrics_leia_dict = classification_report(rec_leia['fechou'], rec_leia['previsao_LeIA'], output_dict=True, zero_division=1)
         metrics_leia = pd.DataFrame(metrics_leia_dict)
         metrics_leia = metrics_leia.transpose()
@@ -467,7 +473,7 @@ for k in range(1,len(business_days)):
         metrics_ml_pos = pd.DataFrame(metrics_ml_pos_dict)
         metrics_ml_pos = metrics_ml_pos.transpose()
         
-        #Display dos resultados
+        # Display dos resultados
         data_fim = {'Modelo': ['LeIA','LeIA POS','ML','ML POS'],
                     'Precisão': [metrics_leia['precision']['weighted avg'], metrics_leia_pos['precision']['weighted avg'], metrics_ml['precision']['weighted avg'], metrics_ml_pos['precision']['weighted avg']],
                     'Suport': [metrics_leia['support']['weighted avg'], metrics_leia_pos['support']['weighted avg'], metrics_ml['support']['weighted avg'], metrics_ml_pos['support']['weighted avg']]}
@@ -475,7 +481,7 @@ for k in range(1,len(business_days)):
         pw(df_data_fim)
         
         
-        #%% Simulação de compra
+        #%% SIMULAÇÃO DE COMPRA
     
         compra_leia_total.loc[k,'Dia'] = hj
         compra_ml_total.loc[k,'Dia'] = hj
@@ -491,7 +497,7 @@ for k in range(1,len(business_days)):
         
         for i in range(0,len(rec)):
             
-            #Se pra fechar o gap precisamos de uma variação positiva e a previsão é que o gap será fechado
+            # Se para fechar o gap precisamos de uma variação positiva e a previsão é que o gap será fechado
             if rec.loc[i,'pfechar'] == 'positive' and rec.loc[i,'previsao_LeIA'] == 'Y':
                 qtd_leia = qtd_leia + 1
                 rec.loc[i,'comprar_leia'] = 1
@@ -499,7 +505,7 @@ for k in range(1,len(business_days)):
                 qtd_ml = qtd_ml + 1
                 rec.loc[i,'comprar_ml'] = 1
                 
-            #Se pra fechar o gap precisamos de uma variação positiva 
+            # Se para fechar o gap precisamos de uma variação positiva 
             if rec.loc[i,'pfechar'] == 'positive':
                 qtd_gap = qtd_gap + 1
                 rec.loc[i,'comprar_gap'] = 1
@@ -526,7 +532,7 @@ for k in range(1,len(business_days)):
         prev_ml = 0
         prev_gap = 0
         
-        #Variação e lucro comprando ações que precisam subir para fechar gap e recomendadas por LeIA
+        # Variação e lucro comprando ações que precisam subir para fechar gap e recomendadas por LeIA
         for i in range(0,len(compra_leia)):
             for j in range(15,compra_leia.shape[1]-6):
                 if compra_leia.iloc[i,j] <= (1-pa)*compra_leia.loc[i,'open']:
@@ -547,7 +553,7 @@ for k in range(1,len(business_days)):
             if compra_leia.loc[i,'previsao_LeIA'] == compra_leia.loc[i,'fechou']:
                 prev_leia = prev_leia + 1
         
-        #Variação e lucro comprando ações que precisam subir para fechar gap e recomendadas por ML
+        # Variação e lucro comprando ações que precisam subir para fechar gap e recomendadas por ML
         for i in range(0,len(compra_ml)):      
             for j in range(15,compra_ml.shape[1]-6):
                 if compra_ml.iloc[i,j] <= (1-pa)*compra_ml.loc[i,'open']:
@@ -568,7 +574,7 @@ for k in range(1,len(business_days)):
             if compra_ml.loc[i,'previsao_ml'] == compra_ml.loc[i,'fechou']:
                 prev_ml = prev_ml + 1   
                 
-        #Variação e lucro comprando ações que precisam subir para fechar gap
+        # Variação e lucro comprando ações que precisam subir para fechar gap
         for i in range(0,len(compra_gap)):      
              for j in range(15,compra_gap.shape[1]-6):
                  if compra_gap.iloc[i,j] <= (1-pa)*compra_gap.loc[i,'open']:
@@ -607,7 +613,7 @@ for k in range(1,len(business_days)):
         compra_ml_total.loc[k,'Quantidade'] = str(len(compra_ml))
         compra_gap_total.loc[k,'Quantidade'] = str(len(compra_gap))
     
-        #Saídas
+        # Saídas
         pw('\n'+'Lucro LeIA: ' + str(lucro_leia) + ' / Lucro ML: '+ str(lucro_ml) + ' / Lucro Gap: '+ str(lucro_gap))
         pw('Lucro Acumulado LeIA: ' + str(lucro_acumulado_leia) + ' / Lucro Acumulado ML: '+ str(lucro_acumulado_ml) + ' / Lucro Acumulado Gap: '+ str(lucro_acumulado_gap))
         
@@ -635,12 +641,12 @@ for k in range(1,len(business_days)):
             pw('Compra Gap está vazio')
             compra_gap_total.loc[k,'Acerto'] = np.nan
             
-        #Ajuste investimento acumulado
+        # Ajuste investimento acumulado
         investimento_acumulado_leia = investimento_acumulado_leia + lucro_leia
         investimento_acumulado_ml = investimento_acumulado_ml + lucro_ml
         investimento_acumulado_gap = investimento_acumulado_gap + lucro_gap
             
-        #Exportar dataframes de interesse em CSV 
+        # Exportar dataframes diários em CSV 
         df.to_csv('./outputs/'+hj+'_df.csv',sep=';')
         metrics_leia.to_csv('./outputs/'+hj+'_metrics_leia.csv',sep=';')
         metrics_ml.to_csv('./outputs/'+hj+'_metrics_ml.csv',sep=';')
@@ -658,7 +664,7 @@ for k in range(1,len(business_days)):
         pw('Erro no dia '+ hj)
         pw(f"Exception type: {type(e).__name__}")
         
-    
+# Exportar dataframes totais em CSV     
 compra_leia_total.to_csv('./outputs/compra_leia_total.csv',sep=';')
 compra_ml_total.to_csv('./outputs/compra_ml_total.csv',sep=';')
 compra_gap_total.to_csv('./outputs/compra_gap_total.csv',sep=';')

@@ -61,7 +61,7 @@ class_weights = {'negative':1, 'neutral':1, 'positive':5}
 model_rf = (RandomForestClassifier(class_weight=class_weights))
 
 # Criar o objeto RandomizedSearchCV para o RF
-random_search_rf = RandomizedSearchCV(model_rf, param_distributions=param_grid_rf, n_iter=100, cv=5)
+random_search_rf = RandomizedSearchCV(model_rf, param_distributions=param_grid_rf, n_iter=10, cv=5)
 
 # Realizar a busca de hiperparâmetros para o RF
 random_search_rf.fit(X_tfidf_pt_spc, y_pt_spc)
