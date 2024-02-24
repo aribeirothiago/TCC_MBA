@@ -20,3 +20,6 @@ Lucro Acumulado LeIA: 0 / Lucro Acumulado ML: 0 / Lucro Acumulado Gap: 0.7791563
 Compra LeIA está vazio
 Compra ML está vazio
 Acerto Gap: 60.0 / Quantidade Gap: 5
+
+2023-01-03: 
+

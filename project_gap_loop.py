@@ -48,7 +48,7 @@ neg_ml = 0.345
 pa = 0.01
 
 # True ou False para baixar o arquivo da carteira 
-download = True
+download = False
 
 # Datas de início e fim (o primeiro dia não é considerado para previsões)
 start_date = '2023-01-01'
