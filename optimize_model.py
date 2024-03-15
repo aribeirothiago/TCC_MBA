@@ -8,6 +8,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.naive_bayes import MultinomialNB
 
 #Dataset do Kaggle (https://www.kaggle.com/datasets/mateuspicanco/financial-phrase-bank-portuguese-translation)
 df_sent = pd.read_csv('financial_phrase_bank_pt_br.csv')
@@ -70,6 +71,43 @@ random_search_rf.fit(X_tfidf_pt_spc, y_pt_spc)
 params_rf = random_search_rf.best_params_
 print("Melhores hiperparâmetros para rf:")
 print(params_rf)
+
+# Definir o espaço de busca dos hiperparâmetros para o modelo NB
+param_grid_nb = {
+    'alpha': [0.1, 0.5, 1.0, 5.0, 10.0]
+}
+
+class_weights = {'negative':1, 'neutral':1, 'positive':5}
+
+# Criar o modelo com OneVsRestClassifier para o RF
+model_rf = (RandomForestClassifier(class_weight=class_weights))
+
+# Criar o objeto RandomizedSearchCV para o RF
+random_search_rf = RandomizedSearchCV(model_rf, param_distributions=param_grid_rf, n_iter=10, cv=5)
+
+# Realizar a busca de hiperparâmetros para o RF
+random_search_rf.fit(X_tfidf_pt_spc, y_pt_spc)
+
+# Imprimir os melhores hiperparâmetros encontrados para o RF
+params_rf = random_search_rf.best_params_
+print("Melhores hiperparâmetros para rf:")
+print(params_rf)
+
+# Criar o modelo para NB
+model_nb = (MultinomialNB())
+
+# Criar o objeto RandomizedSearchCV para o RF
+random_search_nb = RandomizedSearchCV(model_nb, param_distributions=param_grid_nb, n_iter=10, cv=5)
+
+# Realizar a busca de hiperparâmetros para o RF
+random_search_nb.fit(X_tfidf_pt_spc, y_pt_spc)
+
+# Imprimir os melhores hiperparâmetros encontrados para o RF
+params_nb = random_search_nb.best_params_
+print("Melhores hiperparâmetros para nb:")
+print(params_nb)
+
+#%%
 
 #Divisão treino e teste
 def split_data(X, y, split_point=-400):
