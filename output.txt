@@ -3481,3 +3481,26 @@ Acerto GAP: 70.58823529411765 / Quantidade GAP: 17
 
 2024-02-01: 
 
+
+2024-02-01: 
+
+     Modelo  Precisão  Suport
+0      LEIA  1.000000     5.0
+1  LEIA POS  1.000000     5.0
+2        RF  1.000000     8.0
+3    RF POS  1.000000     8.0
+4        NB  0.968750    28.0
+5    NB POS  0.965561    28.0
+
+Lucro LEIA: 0 / Lucro RF: 0.5058488776477965 / Lucro NB: 0.22222222222221255 / Lucro GAP: -8.494179053595587
+Lucro Acumulado LEIA: 0 / Lucro Acumulado RF: 0.5058488776477965 / Lucro Acumulado NB: 0.22222222222221255 / Lucro Acumulado GAP: -8.494179053595587
+Compra LEIA está vazio
+Acerto RF: 100.0 / Quantidade RF: 1
+Acerto NB: 100.0 / Quantidade NB: 1
+Acerto GAP: 75.0 / Quantidade GAP: 12
+
+2024-02-02: 
+
+
+2024-02-01: 
+

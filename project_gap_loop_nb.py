@@ -59,7 +59,7 @@ start_date = '2024-01-31'
 end_date = '2024-02-29'
 
 # Intervalo para busca de preço das ações (Opções: 1m, 2m, 5m, 15m, 30m, 60m, 90m, 1h, 1d, 5d, 1wk, 1mo, 3mo)
-intervalo1='1m'
+intervalo1='5m'
 intervalo2='5m'
 
 # Feriados
@@ -632,7 +632,7 @@ for k in range(1,len(business_days)):
         
         # Variação e lucro comprando ações que precisam subir para fechar GAP e recomendadas por LEIA
         for i in range(0,len(compra_LEIA)):
-            for j in range(21,compra_LEIA.shape[1]-6):
+            for j in range(21,compra_LEIA.shape[1]-7):
                 if compra_LEIA.iloc[i,j] <= (1-pa)*compra_LEIA.loc[i,'open']:
                     compra_LEIA.loc[i,'var'] = compra_LEIA.iloc[i,j]/compra_LEIA.loc[i,'open']-1
                     compra_LEIA.loc[i,'lucro'] = investimento/qtd_LEIA*compra_LEIA.loc[i,'var']
@@ -653,7 +653,7 @@ for k in range(1,len(business_days)):
         
         # Variação e lucro comprando ações que precisam subir para fechar GAP e recomendadas por RF
         for i in range(0,len(compra_RF)):      
-            for j in range(21,compra_RF.shape[1]-6):
+            for j in range(21,compra_RF.shape[1]-7):
                 if compra_RF.iloc[i,j] <= (1-pa)*compra_RF.loc[i,'open']:
                     compra_RF.loc[i,'var'] = compra_RF.iloc[i,j]/compra_RF.loc[i,'open']-1
                     compra_RF.loc[i,'lucro'] = investimento/qtd_RF*compra_RF.loc[i,'var']
@@ -675,7 +675,7 @@ for k in range(1,len(business_days)):
 
         # Variação e lucro comprando ações que precisam subir para fechar GAP e recomendadas por NB
         for i in range(0,len(compra_NB)):      
-            for j in range(21,compra_NB.shape[1]-6):
+            for j in range(21,compra_NB.shape[1]-7):
                 if compra_NB.iloc[i,j] <= (1-pa)*compra_NB.loc[i,'open']:
                     compra_NB.loc[i,'var'] = compra_NB.iloc[i,j]/compra_NB.loc[i,'open']-1
                     compra_NB.loc[i,'lucro'] = investimento/qtd_NB*compra_NB.loc[i,'var']
@@ -697,7 +697,7 @@ for k in range(1,len(business_days)):
                 
         # Variação e lucro comprando ações que precisam subir para fechar GAP
         for i in range(0,len(compra_GAP)):      
-             for j in range(21,compra_GAP.shape[1]-6):
+             for j in range(21,compra_GAP.shape[1]-7):
                  if compra_GAP.iloc[i,j] <= (1-pa)*compra_GAP.loc[i,'open']:
                      compra_GAP.loc[i,'var'] = compra_GAP.iloc[i,j]/compra_GAP.loc[i,'open']-1
                      compra_GAP.loc[i,'lucro'] = investimento/qtd_GAP*compra_GAP.loc[i,'var']
