@@ -52,15 +52,15 @@ neg_NB = 0.345
 pa = 0.01
 
 # True ou False para baixar o arquivo da carteira 
-download = False
+download = True
 
 # Datas de início e fim (o primeiro dia não é considerado para previsões)
-start_date = '2024-01-31'
-end_date = '2024-02-29'
+start_date = '2023-01-01'
+end_date = '2023-12-31'
 
 # Intervalo para busca de preço das ações (Opções: 1m, 2m, 5m, 15m, 30m, 60m, 90m, 1h, 1d, 5d, 1wk, 1mo, 3mo)
-intervalo1='5m'
-intervalo2='5m'
+intervalo1='60m'
+intervalo2='60m'
 
 # Feriados
 feriados = ['2023-02-20','2023-02-21','2023-04-07','2023-04-21','2023-05-01','2023-06-08','2023-09-07','2023-10-12','2023-11-02','2023-12-25','2023-12-29','2024-01-01', '2024-02-12','2024-02-13','2024-03-29','2024-05-01','2024-05-30','2024-11-15','2024-12-24','2024-12-25','2024-12-31']
