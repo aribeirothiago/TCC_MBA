@@ -1,3 +1,4 @@
-# Ambiente virtual Python
-env/
 outputs/*
+old/*
+ibovs/*
+outputs_realtime/*
