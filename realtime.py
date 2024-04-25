@@ -18,8 +18,10 @@ from datetime import time, datetime, timedelta
 #%% ENTRADAS
 
 # Thresholds
-sup_LEIA = 0.35
-inf_LEIA = -0.55
+# sup_LEIA = 0.35
+# inf_LEIA = -0.55
+sup_LEIA = 0.2
+inf_LEIA = -0.2
 
 # Perda aceitável
 pa = 0.01
@@ -129,54 +131,73 @@ for i in range(0,len(rec)):
         rec.loc[i,'Rec_LEIA'] = 'negative'
     else:
         rec.loc[i,'Rec_LEIA'] = 'neutral'
+        
+rec = rec[rec['Rec_LEIA'] == 'positive'].reset_index(drop=True)
 
 #%% OBTER VARIAÇÃO DA AÇÃO NO DIA
 
-compra = []
-precos_abertura = []
-precos_fechar = []
+print('Selecionando ações...')
 
-# Loop para os tickers desejados
-todrop = np.zeros(len(rec))
-for i in range(0,len(rec)):
-    ticker_symbol = rec.loc[i,'Code']+'.SA'
+precos_abertura = [0]
+
+def generator():
+  while all(item == 0 for item in precos_abertura): # Enquanto os preços forem iguais a 0
+    yield
+
+for _ in tqdm(generator()):
+
+    compra = []
+    precos_abertura = []
+    precos_fechar = []
     
-    # Obter dados para hoje e ontem
-    data_hoje = yf.download(ticker_symbol, start=hoje,end=amanha, progress=False)
-    data_ontem = yf.download(ticker_symbol, start=ontem, end=hoje, progress=False)
-  
-    # Verificar qual a condição necessária para fechar o gap
-    if float(data_hoje['Open'].iloc[0]) > float(data_ontem['Close'].iloc[0]):
-        pfechar = 'negative'
-    elif float(data_hoje['Open'].iloc[0]) < float(data_ontem['Close'].iloc[0]):
-        pfechar = 'positive'
-    elif float(data_hoje['Open'].iloc[0]) == float(data_ontem['Close'].iloc[0]):
-        pfechar = 'neutral'
-    else: 
-        pfechar = 'null'
-    
-    # Selecionar ações de interesse
-    if pfechar == 'positive' and rec.loc[i,'Rec_LEIA'] == 'positive':
-        compra.append(rec.loc[i,'Code'])
-        precos_abertura.append(float(data_hoje['Open'].iloc[0]))
-        precos_fechar.append(data_ontem['Close'].iloc[0])
+    # Loop para os tickers desejados
+    todrop = np.zeros(len(rec))
+    for i in range(0,len(rec)):
+        ticker_symbol = rec.loc[i,'Code']+'.SA'
+        
+        # Obter dados para hoje e ontem
+        data_hoje = yf.download(ticker_symbol, start=hoje,end=amanha, progress=False)
+        data_ontem = yf.download(ticker_symbol, start=ontem, end=hoje, progress=False)
+      
+        # Verificar qual a condição necessária para fechar o gap
+        if float(data_hoje['Open'].iloc[0]) > float(data_ontem['Close'].iloc[0]):
+            pfechar = 'negative'
+        elif float(data_hoje['Open'].iloc[0]) < float(data_ontem['Close'].iloc[0]):
+            pfechar = 'positive'
+        elif float(data_hoje['Open'].iloc[0]) == float(data_ontem['Close'].iloc[0]):
+            pfechar = 'neutral'
+        else: 
+            pfechar = 'null'
+        
+        # Selecionar ações de interesse
+        if pfechar == 'positive' and rec.loc[i,'Rec_LEIA'] == 'positive':
+            compra.append(rec.loc[i,'Code'])
+            precos_abertura.append(float(data_hoje['Open'].iloc[0]))
+            precos_fechar.append(data_ontem['Close'].iloc[0])
+            
+    sleep(1)    
 
 #%% SIMULAÇÃO DE COMPRA
 
 vender = compra.copy()
-vendidas = pd.DataFrame(columns=['Code','Preço Compra','Preço Desejado','Preço Venda','Hora Venda'])
+vendidas = pd.DataFrame(columns=['Code','Preço Compra','Preço Desejado','Preço Mínimo','Preço Venda','Hora Venda'])
 vendidas['Code'] = compra
 vendidas['Preço Compra'] = precos_abertura
 vendidas['Preço Desejado'] = precos_fechar
+vendidas['Preço Mínimo'] = [(1 - pa) * preco for preco in precos_abertura]
 acoes_compra = ', '.join(compra)
 
-print('Lista de Ações: '+acoes_compra)
+print('Lista de Ações: \n')
+print(vendidas[['Code','Preço Compra','Preço Desejado','Preço Mínimo']])
+print('\n')
 
 def generator():
   while vender != []: # Enquanto a lista para vender não estiver vazia
     yield
 
 for _ in tqdm(generator()):
+    
+    print('\n')
     
     # Loop para as ações de interesse
     for i in range(0,len(compra)):
@@ -186,17 +207,24 @@ for _ in tqdm(generator()):
             ticker_symbol= compra[i]+'.SA'
         
             # Obter preço atual da ação
-            data_agora = yf.download(ticker_symbol, start=hoje,end=amanha, progress=False)
-            preco_agora = float(data_agora['Close'].iloc[0])
+            data_agora = yf.download(ticker_symbol, start=hoje,end=amanha, interval='1m', progress=False).tail(1)
+            preco_agora = float(data_agora['Open'].iloc[0])
+            
+            print(compra[i]+': '+str(preco_agora))
             
             # Verificar condições para venda
-            if preco_agora >= vendidas.loc[i,'Preço Desejado'] or preco_agora <= (1-pa)*vendidas.loc[i,'Preço Compra']:
+            if preco_agora >= vendidas.loc[i,'Preço Desejado'] or preco_agora < vendidas.loc[i,'Preço Mínimo']:
                 vendidas.loc[i,'Preço Venda'] = preco_agora
                 vendidas.loc[i,'Hora Venda'] = datetime.now().strftime('%H:%M:%S')
                 vender.remove(compra[i])
-                print('\n' + compra[i] +' vendida!')
-               
-    sleep(1)
+                
+                if preco_agora >= vendidas.loc[i,'Preço Desejado']:
+                    print(compra[i] +' vendida acima do Preço Desejado!')
+                else:
+                    print(compra[i] +' vendida abaixo do Preço Mínimo!')
+     
+    print('\n')
+    sleep(60)
     
 # Exportar resultado   
 vendidas.to_csv('./outputs_realtime/vendidas_'+hoje+'.csv',encoding='ansi',sep=';')
