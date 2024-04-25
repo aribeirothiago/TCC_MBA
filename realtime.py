@@ -239,10 +239,11 @@ investimento = 100
 
 # Loop para as ações de interesse
 for i in range(0,len(vendidas)):
+    ticker_symbol = vendidas.loc[i,'Code']+'.SA'
     data_hoje_total = yf.download(ticker_symbol, start=hoje,end=amanha,interval='1m', progress=False)
     hora_venda = datetime.strptime(hoje + ' ' + str(vendidas.loc[i,'Hora Venda']), ('%Y-%m-%d %H:%M:%S'))
     hora_real = hora_venda + timedelta(minutes=15)
-    hora_indice = hora_real.strftime('%Y-%m-%d %H:%M:%S')+'-03:00'
+    hora_indice = hora_real.strftime('%Y-%m-%d %H:%M')+':00-03:00'
     preco_real = data_hoje_total.loc[hora_indice,'Open']
     vendidas.loc[i,'Preço Real'] = preco_real
     vendidas.loc[i,'Variação'] = (preco_real-vendidas.loc[i,'Preço Compra'])/vendidas.loc[i,'Preço Compra']
