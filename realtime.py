@@ -20,8 +20,8 @@ from datetime import time, datetime, timedelta
 # Thresholds
 # sup_LEIA = 0.35
 # inf_LEIA = -0.55
-sup_LEIA = 0.2
-inf_LEIA = -0.2
+sup_LEIA = 0.1
+inf_LEIA = -0.1
 
 # Perda aceitável
 pa = 0.01
@@ -213,15 +213,20 @@ for _ in tqdm(generator()):
             print(compra[i]+': '+str(preco_agora))
             
             # Verificar condições para venda
-            if preco_agora >= vendidas.loc[i,'Preço Desejado'] or preco_agora < vendidas.loc[i,'Preço Mínimo']:
+            if (preco_agora >= vendidas.loc[i,'Preço Desejado'] or preco_agora < vendidas.loc[i,'Preço Mínimo'] or 
+                datetime.now() >= datetime(datetime.now().year, datetime.now().month, datetime.now().day, 17, 15, 0)):
+                
                 vendidas.loc[i,'Preço Venda'] = preco_agora
                 vendidas.loc[i,'Hora Venda'] = datetime.now().strftime('%H:%M:%S')
                 vender.remove(compra[i])
                 
                 if preco_agora >= vendidas.loc[i,'Preço Desejado']:
                     print(compra[i] +' vendida acima do Preço Desejado!')
-                else:
+                elif preco_agora < vendidas.loc[i,'Preço Mínimo']:
                     print(compra[i] +' vendida abaixo do Preço Mínimo!')
+                else:
+                    print(compra[i] +' vendida no fechamento!')
+                
      
     print('\n')
     sleep(60)
@@ -242,9 +247,11 @@ for i in range(0,len(vendidas)):
     ticker_symbol = vendidas.loc[i,'Code']+'.SA'
     data_hoje_total = yf.download(ticker_symbol, start=hoje,end=amanha,interval='1m', progress=False)
     hora_venda = datetime.strptime(hoje + ' ' + str(vendidas.loc[i,'Hora Venda']), ('%Y-%m-%d %H:%M:%S'))
-    hora_real = hora_venda + timedelta(minutes=15)
-    hora_indice = hora_real.strftime('%Y-%m-%d %H:%M')+':00-03:00'
-    preco_real = data_hoje_total.loc[hora_indice,'Open']
+    if hora_venda >= datetime(datetime.now().year, datetime.now().month, datetime.now().day, 17, 0, 0):
+        preco_real = data_hoje_total['Open'].iloc[-1]
+    else:
+        hora_indice = hora_venda.strftime('%Y-%m-%d %H:%M')+':00-03:00'
+        preco_real = data_hoje_total.loc[hora_indice,'Open']
     vendidas.loc[i,'Preço Real'] = preco_real
     vendidas.loc[i,'Variação'] = (preco_real-vendidas.loc[i,'Preço Compra'])/vendidas.loc[i,'Preço Compra']
     vendidas.loc[i,'Lucro'] = investimento/len(vendidas)*vendidas.loc[i,'Variação']
