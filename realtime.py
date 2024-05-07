@@ -206,26 +206,29 @@ for _ in tqdm(generator()):
         
             ticker_symbol= compra[i]+'.SA'
         
-            # Obter preço atual da ação
-            data_agora = yf.download(ticker_symbol, start=hoje,end=amanha, interval='1m', progress=False).tail(1)
-            preco_agora = float(data_agora['Open'].iloc[0])
-            
-            print(compra[i]+': '+str(preco_agora))
-            
-            # Verificar condições para venda
-            if (preco_agora >= vendidas.loc[i,'Preço Desejado'] or preco_agora < vendidas.loc[i,'Preço Mínimo'] or 
-                datetime.now() >= datetime(datetime.now().year, datetime.now().month, datetime.now().day, 17, 15, 0)):
+            try:
+                # Obter preço atual da ação
+                data_agora = yf.download(ticker_symbol, start=hoje,end=amanha, interval='1m', progress=False).tail(1)
+                preco_agora = float(data_agora['Open'].iloc[0])
                 
-                vendidas.loc[i,'Preço Venda'] = preco_agora
-                vendidas.loc[i,'Hora Venda'] = datetime.now().strftime('%H:%M:%S')
-                vender.remove(compra[i])
+                print(compra[i]+': '+str(preco_agora))
                 
-                if preco_agora >= vendidas.loc[i,'Preço Desejado']:
-                    print(compra[i] +' vendida acima do Preço Desejado!')
-                elif preco_agora < vendidas.loc[i,'Preço Mínimo']:
-                    print(compra[i] +' vendida abaixo do Preço Mínimo!')
-                else:
-                    print(compra[i] +' vendida no fechamento!')
+                # Verificar condições para venda
+                if (preco_agora >= vendidas.loc[i,'Preço Desejado'] or preco_agora < vendidas.loc[i,'Preço Mínimo'] or 
+                    datetime.now() >= datetime(datetime.now().year, datetime.now().month, datetime.now().day, 17, 15, 0)):
+                    
+                    vendidas.loc[i,'Preço Venda'] = preco_agora
+                    vendidas.loc[i,'Hora Venda'] = datetime.now().strftime('%H:%M:%S')
+                    vender.remove(compra[i])
+                    
+                    if preco_agora >= vendidas.loc[i,'Preço Desejado']:
+                        print(compra[i] +' vendida acima do Preço Desejado!')
+                    elif preco_agora < vendidas.loc[i,'Preço Mínimo']:
+                        print(compra[i] +' vendida abaixo do Preço Mínimo!')
+                    else:
+                        print(compra[i] +' vendida no fechamento!')
+            except:
+                 print(compra[i]+' indisponível!')
                 
      
     print('\n')
