@@ -141,7 +141,7 @@ print('Selecionando ações...')
 precos_abertura = [0]
 
 def generator():
-  while all(item == 0 for item in precos_abertura): # Enquanto os preços forem iguais a 0
+  while any(item == 0 for item in precos_abertura): # Enquanto os preços forem iguais a 0
     yield
 
 for _ in tqdm(generator()):
