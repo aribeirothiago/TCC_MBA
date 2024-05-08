@@ -18,10 +18,10 @@ from datetime import time, datetime, timedelta
 #%% ENTRADAS
 
 # Thresholds
-# sup_LEIA = 0.35
-# inf_LEIA = -0.55
-sup_LEIA = 0.1
-inf_LEIA = -0.1
+sup_LEIA = 0.35
+inf_LEIA = -0.55
+# sup_LEIA = 0.1
+# inf_LEIA = -0.1
 
 # Perda aceitável
 pa = 0.01
@@ -233,9 +233,9 @@ for _ in tqdm(generator()):
      
     print('\n')
     sleep(60)
-    
+
 # Exportar resultado   
-vendidas.to_csv('./outputs_realtime/vendidas_'+hoje+'.csv',encoding='ansi',sep=';')
+vendidas.to_csv('C:/Users/thiag/OneDrive/Documentos/MBA/TCC/CODE/TCC_MBA/outputs_realtime/vendidas_'+hoje+'.csv',encoding='ansi',sep=';')
 
 sleep(1200)
 
@@ -260,4 +260,4 @@ for i in range(0,len(vendidas)):
     vendidas.loc[i,'Lucro'] = investimento/len(vendidas)*vendidas.loc[i,'Variação']
 
 # Exportar resultado   
-vendidas.to_csv('./outputs_realtime/vendidas_'+hoje+'.csv',encoding='ansi',sep=';')
+vendidas.to_csv('C:/Users/thiag/OneDrive/Documentos/MBA/TCC/CODE/TCC_MBA/outputs_realtime/vendidas_'+hoje+'.csv',encoding='ansi',sep=';')
