@@ -157,7 +157,7 @@ for _ in tqdm(generator()):
         
         # Obter dados para hoje e ontem
         data_hoje = yf.download(ticker_symbol, start=hoje,end=amanha, progress=False)
-        data_ontem = yf.download(ticker_symbol, start=ontem, end=hoje, progress=False)
+        data_ontem = yf.download(ticker_symbol, start=ontem_util, end=hoje, progress=False)
       
         # Verificar qual a condição necessária para fechar o gap
         if float(data_hoje['Open'].iloc[0]) > float(data_ontem['Close'].iloc[0]):
