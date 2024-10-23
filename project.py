@@ -44,11 +44,11 @@ neg_NB = 0.345
 pa = 0.01
 
 # True ou False para baixar o arquivo da carteira 
-download = False
+download = True
 
 # Datas de início e fim (o primeiro dia não é considerado para previsões)
-start_date = '2024-03-27'
-end_date = '2024-03-28'
+start_date = '2024-10-01'
+end_date = '2024-10-02'
 
 # Intervalo para busca de preço das ações (Opções: 1m, 2m, 5m, 15m, 30m, 60m, 90m, 1h, 1d, 5d, 1wk, 1mo, 3mo)
 intervalo1='1m'
@@ -164,7 +164,7 @@ df_resultados_RF = pd.DataFrame(metrics_RF_spc).transpose()
 df_resultados_NB = pd.DataFrame(metrics_NB_spc).transpose()
 
 # Definir os nomes das classes
-nomes_classes = ['negativo', 'positivo', 'neutro']
+nomes_classes = ['negativo', 'neutro', 'positivo']
 
 # Criar as matrizes de confusão
 conf_mat_RF = confusion_matrix(y_test_pt_spc, y_pred_RF_spc)
