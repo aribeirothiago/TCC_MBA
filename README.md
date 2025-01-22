@@ -2,7 +2,7 @@
 ## Thiago de Almeida Ribeiro e Adâmara Santos Gonçalves Felício
 
 ### Repositório
-Este repositório contém todos os códigos e bases de dados utilizados no Trabalho de Conclusão de Curso apresentado para obtenção do título de especialista em Data Science e Analytics (2024) do MBA USP/ESALQ.
+Este repositório contém todos os códigos e bases de dados utilizados no Trabalho de Conclusão de Curso apresentado para obtenção do título de especialista em Data Science e Analytics (2025) do MBA USP/ESALQ.
 
 O script "project.py" é o principal, descrito ao longo do trabalho, enquanto "realtime.py" é a ferramenta pra simulação de compra em tempo real e "optimize_model.py" foi utilizado para otimizar os modelos de aprendizado de máquina. O arquivo "financial_phrase_bank_pt_br.csv" foi o conjunto de dados utilizado para treinamento dos modelos e a pasta "ibovs" contem a lista de ações do índice Ibovespa em diferentes dias.
 
